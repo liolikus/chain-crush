@@ -1,0 +1,182 @@
+body {
+  background-color: black;
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  background-color: black;
+  color: white;
+  min-height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  align-items: center;
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game {
+  width: 560px;
+  height: 560px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.game img {
+  width: 70px;
+  height: 70px;
+}
+
+.loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #222;
+  padding: 40px;
+  border-radius: 12px;
+  border: 2px solid #444;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  min-width: 300px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #333;
+  border-top: 4px solid #4CAF50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-content p {
+  margin: 8px 0;
+  font-size: 16px;
+  color: #fff;
+}
+
+.game-header {
+  width: 560px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #222;
+  border-radius: 8px;
+}
+
+.blockchain-status {
+  width: 560px;
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #333;
+  border-radius: 8px;
+}
+
+.timer {
+  flex: 1;
+  order: 1;
+}
+
+.timer h3 {
+  margin: 0 0 5px 0;
+}
+
+.timer p {
+  margin: 0;
+}
+
+.game-controls {
+  flex: 1;
+  text-align: center;
+  order: 2;
+}
+
+.score-board {
+  flex: 1;
+  text-align: right;
+  order: 3;
+}
+
+.start-btn {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: 3px solid #66BB6A;
+  border-radius: 12px;
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  font-family: 'Arial', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 200px;
+}
+
+.start-btn:hover {
+  background: linear-gradient(135deg, #66BB6A, #4CAF50);
+  border-color: #4CAF50;
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+  transform: translateY(-2px);
+}
+
+.start-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(76, 175, 80, 0.4);
+}
+
+.start-btn:disabled {
+  background: linear-gradient(135deg, #666, #555);
+  border-color: #777;
+  color: #ccc;
+  cursor: not-allowed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: none;
+}
+
+.start-btn:disabled:hover {
+  background: linear-gradient(135deg, #666, #555);
+  border-color: #777;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: none;
+}
+
+.blockchain-info {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #333;
+}

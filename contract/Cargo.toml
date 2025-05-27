@@ -1,0 +1,26 @@
+[package]
+name = "fungible"
+version = "0.1.0"
+authors = ["Linera <contact@linera.io>"]
+edition = "2021"
+
+[features]
+test = []
+
+[dependencies]
+async-graphql = "7.0"
+futures = "0.3"
+linera-sdk = "0.14.0"
+serde = { version = "1.0", features = ["derive"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+linera-sdk = { version = "0.14.0", features = ["test", "wasmer"] }
+tokio = { version = "1.0", features = ["full"] }
+
+[[bin]]
+name = "fungible_contract"
+path = "src/contract.rs"
+
+[[bin]]
+name = "fungible_service"
+path = "src/service.rs"
