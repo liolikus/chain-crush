@@ -94,8 +94,6 @@ chain-crush/
 ---
 
 **Play Chain Crush and earn tokens while having fun!** 🎮🪙
-```
-
 
 
 
