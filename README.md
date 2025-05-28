@@ -7,7 +7,7 @@ A blockchain-powered Candy Crush styled game built with React and Linera protoco
 
 - 🎮 Classic match-3 gameplay
 - ⛓️ Integration with Linera
-- 🪙 Score-to-token conversion
+- 🎉 Score-to-token conversion
 - 🏆 Decentralized leaderboard
 - 💾 Offline mode fallback
 
@@ -93,7 +93,7 @@ chain-crush/
 
 ---
 
-**Play Chain Crush and earn tokens while having fun!** 🎮🪙
+**Play Chain Crush and earn tokens while having fun!** 🎮🎉
 
 
 
