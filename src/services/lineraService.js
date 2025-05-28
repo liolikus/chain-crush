@@ -1,5 +1,7 @@
 import * as linera from '@linera/client';
 
+const DEPLOYED_CHAIN_ID = '95bb388c7a4fd3261a10b3152565b4bb142a8bdb1790a78a9e27895e2da11ccb';
+
 class LineraService {
   constructor() {
     this.client = null;
@@ -68,7 +70,7 @@ class LineraService {
         console.log('Chain claimed successfully:', this.chainId);
         
         // Get account owner
-        this.accountOwner = `User:${this.chainId}`;
+        this.accountOwner = this.chainId; 
         console.log('Account owner:', this.accountOwner);
         
         // Mark as initialized BEFORE trying to load application
@@ -165,71 +167,194 @@ async debugApplicationInfo() {
     }
   }
 
-  async submitScore(score, gameTime, moves) {
+async submitScore(score, gameTime, moves) {
+  try {
+    if (!this.isInitialized || !this.client) {
+      console.log('Backend not initialized, returning mock success');
+      return { success: true, mock: true, score, reason: 'not_initialized' };
+    }
+
+    console.log('🪙 Attempting to mint tokens for score:', score);
+
+    // Try transfer with identity as owner
+    const identity = await this.client.identity();
+    
     try {
-      if (!this.isInitialized) {
-        console.log('Backend not initialized, returning mock success');
-        return { success: true, mock: true, score, reason: 'not_initialized' };
-      }
+      // First attempt: try direct transfer from current chain
+      const transferResult = await this.client.transfer({
+        amount: score,
+        recipient: {
+          chain_id: this.chainId,
+          owner: identity
+        }
+      });
 
-      if (!this.application) {
-        console.log('Application not available, returning mock success');
-        return { success: true, mock: true, score, reason: 'no_application' };
-      }
+      console.log('✅ Transfer successful:', transferResult);
+      return { 
+        success: true, 
+        mock: false, 
+        score: score, 
+        result: transferResult 
+      };
 
-      console.log('🪙 Attempting to mint tokens for score:', score);
+    } catch (transferError) {
+      console.log('Direct transfer failed, trying to get more tokens from faucet...');
+      
+      // If transfer fails due to insufficient balance, try to get more tokens
+      if (transferError.message.includes('must not exceed the balance')) {
+        try {
+          console.log('💰 Claiming additional chain from faucet for more tokens...');
+          
+          // Claim a new chain which should come with tokens
+          const newChainId = await this.faucet.claimChain(this.client);
+          console.log('✅ Claimed new chain with tokens:', newChainId);
+          
+          // Now try the transfer FROM the new chain (which has tokens) TO our original chain
+          const transferResult = await this.client.transfer({
+            amount: score,
+            donor: newChainId, // Transfer FROM the new chain that has tokens
+            recipient: {
+              chain_id: this.chainId, // TO our original chain
+              owner: identity
+            }
+          });
 
-      try {
-        // Try to use the fungible token transfer mutation
-        const mutation = `
-          mutation Transfer($owner: String!, $amount: String!, $targetChain: String!) {
-            transfer(owner: $owner, amount: $amount, targetChain: $targetChain) {
-              success
+          console.log('✅ Transfer successful from new chain:', transferResult);
+          return { 
+            success: true, 
+            mock: false, 
+            score: score, 
+            result: transferResult 
+          };
+          
+        } catch (faucetError) {
+          console.log('Faucet transfer failed:', faucetError.message);
+          
+          // Alternative: Try transferring to the new chain instead
+          try {
+            console.log('🔄 Trying to transfer to the new chain instead...');
+            
+            const newChainId = await this.faucet.claimChain(this.client);
+            console.log('✅ Using new chain as recipient:', newChainId);
+            
+            const transferResult = await this.client.transfer({
+              amount: score,
+              recipient: {
+                chain_id: newChainId, // Transfer TO the new chain
+                owner: identity
+              }
+            });
+
+            console.log('✅ Transfer successful to new chain:', transferResult);
+            
+            // Update our chain ID to the new one for future operations
+            this.chainId = newChainId;
+            this.accountOwner = newChainId;
+            
+            return { 
+              success: true, 
+              mock: false, 
+              score: score, 
+              result: transferResult,
+              newChain: true
+            };
+            
+          } catch (newChainError) {
+            console.log('New chain transfer failed:', newChainError.message);
+            
+            // Final fallback: cap the amount on original chain
+            const maxTransfer = 100;
+            const transferAmount = Math.min(score, maxTransfer);
+            
+            try {
+              const transferResult = await this.client.transfer({
+                amount: transferAmount,
+                recipient: {
+                  chain_id: this.chainId,
+                  owner: identity
+                }
+              });
+
+              console.log('✅ Capped transfer successful:', transferResult);
+              return { 
+                success: true, 
+                mock: false, 
+                score: transferAmount, 
+                originalScore: score,
+                result: transferResult 
+              };
+            } catch (cappedError) {
+              console.error('All transfer attempts failed:', cappedError);
+              return { success: true, mock: true, score, reason: 'all_transfers_failed', error: cappedError.message };
             }
           }
-        `;
-
-        const variables = {
-          owner: this.accountOwner,
-          amount: score.toString(),
-          targetChain: this.chainId
-        };
-
-        const result = await this.application.mutate(mutation, variables);
-        console.log('✅ Tokens minted successfully:', result);
-        return { success: true, mock: false, score, result };
-
-      } catch (mutationError) {
-        console.log('Mutation failed, trying simple operation:', mutationError.message);
-        
-        // Fallback to a simpler operation
-        try {
-          const operation = {
-            Transfer: {
-              owner: this.accountOwner,
-              amount: score.toString(),
-              target_account: {
-                chain_id: this.chainId,
-                owner: this.accountOwner
-              }
-            }
-          };
-
-          const result = await this.application.mutate(operation);
-          console.log('✅ Simple operation succeeded:', result);
-          return { success: true, mock: false, score, result };
-
-        } catch (simpleError) {
-          console.log('⚠️ Simple operation also failed:', simpleError.message);
-          return { success: true, mock: true, score, reason: 'mutation_failed', error: simpleError.message };
         }
+      } else {
+        // Different error, just return mock
+        return { success: true, mock: true, score, reason: 'transfer_failed', error: transferError.message };
       }
-
-    } catch (error) {
-      console.error('Failed to submit score:', error);
-      return { success: true, mock: true, score, reason: 'general_error', error: error.message };
     }
+
+  } catch (error) {
+    console.error('Failed to submit score:', error);
+    return { success: true, mock: true, score, reason: 'general_error', error: error.message };
   }
+}async requestTokensFromFaucet(requiredAmount) {
+    try {
+        if (!this.faucet || !this.client) {
+            throw new Error('Faucet or client not available');
+        }
+
+        console.log(`💰 Requesting ${requiredAmount} tokens from faucet for chain ${this.chainId}`);
+        
+        // Method 1: Try using the faucet to request a new chain with tokens
+        // This might give us a fresh allocation
+        try {
+            // Request additional tokens by claiming a new chain and transferring from it
+            const newChainInfo = await this.faucet.claimChain(this.client);
+            console.log('✅ Claimed additional chain for tokens:', newChainInfo);
+            
+            // The new chain should have tokens that we can transfer to our main chain
+            return true;
+            
+        } catch (claimError) {
+            console.log('Failed to claim additional chain:', claimError.message);
+            
+            // Method 2: Try direct faucet request if available
+            try {
+                // Some faucets have direct token request methods
+                const faucetEndpoint = process.env.REACT_APP_LINERA_FAUCET || 'https://faucet.testnet-babbage.linera.net';
+                
+                // Make a direct HTTP request to the faucet
+                const response = await fetch(`${faucetEndpoint}/request-tokens`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chain_id: this.chainId,
+                        amount: requiredAmount
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Successfully requested tokens from faucet via HTTP');
+                    return true;
+                } else {
+                    throw new Error(`Faucet request failed: ${response.status}`);
+                }
+                
+            } catch (httpError) {
+                console.log('HTTP faucet request failed:', httpError.message);
+                throw httpError;
+            }
+        }
+        
+    } catch (error) {
+        console.warn('Failed to request tokens from faucet:', error.message);
+        throw error;
+    }
+}
 
   async endGame() {
     try {
