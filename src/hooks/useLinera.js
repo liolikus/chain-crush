@@ -10,12 +10,14 @@ export const useLinera = () => {
   const [status, setStatus] = useState('Loading');
 
   const updateStatus = useCallback(async (newStatus) => {
-    console.log('Status update:', newStatus);
+    console.log('🔄 Status update:', newStatus);
     setStatus(newStatus);
     
     // If we reach Ready status, stop loading
     if (newStatus === 'Ready') {
+      console.log('✅ Setting isLoading to false and isConnected to true');
       setIsLoading(false);
+      setIsConnected(true);
     }
     
     // Add a small delay to ensure React processes the state update
@@ -26,7 +28,6 @@ export const useLinera = () => {
     try {
       console.log('📊 Loading user data from blockchain in background...');
       
-      // Set a shorter timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('User data loading timeout')), 3000)
       );
@@ -38,68 +39,86 @@ export const useLinera = () => {
       
       const [stats, leaderboardData] = await Promise.race([dataPromise, timeoutPromise]);
       
-      // Always update with the returned data
       setUserStats(stats);
       setLeaderboard(leaderboardData);
       
       console.log('✅ User data loaded successfully in background', { stats, leaderboardData });
     } catch (error) {
       console.warn('Failed to load user data in background (using defaults):', error);
-      // Set default data on error
       setUserStats(lineraService.getDefaultStats());
       setLeaderboard(lineraService.getMockLeaderboard());
     }
   }, []);
 
-  const initializeLinera = useCallback(async () => {
+const initializeLinera = useCallback(async () => {
+    console.log('🚀 Starting Linera initialization...');
     setIsLoading(true);
+    setIsConnected(false);
     setError(null);
     
     try {
-      console.log('🔗 Initializing Linera connection...');
-      
-      // Initialize with status updates
-      const success = await lineraService.initializeWithStatusUpdates(updateStatus);
-      setIsConnected(success);
-      
-      if (success) {
-        console.log('✅ Linera connected successfully!');
+        console.log('🔗 Initializing Linera connection...');
         
-        // Set default data immediately
-        setUserStats(lineraService.getDefaultStats());
-        setLeaderboard(lineraService.getMockLeaderboard());
+        // Add a timeout to prevent hanging
+        const initializationPromise = lineraService.initializeWithStatusUpdates(updateStatus);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Initialization timeout after 30 seconds')), 30000)
+        );
         
-        // Ensure we're marked as ready and not loading
-        await updateStatus('Ready');
-        setIsLoading(false);
+        const success = await Promise.race([initializationPromise, timeoutPromise]);
         
-        // Load user data in the background (non-blocking)
-        setTimeout(() => {
-          loadUserDataInBackground();
-        }, 1000);
+        console.log('🔍 Initialization result:', success);
+        console.log('🔍 Service isInitialized:', lineraService.isInitialized);
         
-      } else {
-        await updateStatus('Error');
-        console.log('❌ Linera connection failed, using offline mode');
-        // Set default data for offline mode
-        setUserStats(lineraService.getDefaultStats());
-        setLeaderboard(lineraService.getMockLeaderboard());
-        setIsLoading(false);
-      }
+        if (success) {
+            console.log('✅ Linera connected successfully!');
+            
+            // Set these states explicitly
+            setIsConnected(true);
+            setIsLoading(false);
+            setError(null);
+            setStatus('Ready');
+            
+            // Set default data immediately
+            setUserStats(lineraService.getDefaultStats());
+            setLeaderboard(lineraService.getMockLeaderboard());
+            
+            // Load user data in the background
+            setTimeout(() => {
+                loadUserDataInBackground();
+            }, 1000);
+            
+        } else {
+            console.log('❌ Linera connection failed, using offline mode');
+            setIsConnected(false);
+            setIsLoading(false);
+            setStatus('Error');
+            setUserStats(lineraService.getDefaultStats());
+            setLeaderboard(lineraService.getMockLeaderboard());
+        }
     } catch (error) {
-      console.error('Linera initialization failed:', error);
-      setError('Failed to connect to Linera network: ' + error.message);
-      setIsConnected(false);
-      await updateStatus('Error');
-      // Set default data on error
-      setUserStats(lineraService.getDefaultStats());
-      setLeaderboard(lineraService.getMockLeaderboard());
-      setIsLoading(false);
+        console.error('Linera initialization failed:', error);
+        setError('Failed to connect to Linera network: ' + error.message);
+        setIsConnected(false);
+        setIsLoading(false);
+        setStatus('Error');
+        setUserStats(lineraService.getDefaultStats());
+        setLeaderboard(lineraService.getMockLeaderboard());
     }
-  }, [updateStatus, loadUserDataInBackground]);
+}, [updateStatus, loadUserDataInBackground]);
+
+  // Debug effect to track all state changes
+  useEffect(() => {
+    console.log('🔍 useLinera state changed:', { 
+      isConnected, 
+      isLoading, 
+      status, 
+      error,
+      serviceInitialized: lineraService.isInitialized 
+    });
+  }, [isConnected, isLoading, status, error]);
 
   const loadUserData = useCallback(async () => {
-    // This is for manual refresh - can be blocking
     try {
       console.log('📊 Manually refreshing user data...');
       const [stats, leaderboardData] = await Promise.all([
@@ -112,7 +131,6 @@ export const useLinera = () => {
       console.log('✅ User data refreshed successfully');
     } catch (error) {
       console.error('Failed to refresh user data:', error);
-      // Keep existing data on refresh failure
     }
   }, []);
 
@@ -138,7 +156,6 @@ export const useLinera = () => {
       
       console.log('✅ Score submission result:', result);
       
-      // Reload data after score submission (but don't wait for it)
       setTimeout(() => {
         loadUserDataInBackground().catch(error => {
           console.warn('Failed to reload user data after score submission:', error);
@@ -149,7 +166,6 @@ export const useLinera = () => {
       
     } catch (error) {
       console.error('Failed to submit score:', error);
-      // Don't show error to user, just log it
       console.log('Score submission failed, but game continues normally');
       return { success: true, mock: true, error: error.message };
     }
@@ -185,7 +201,6 @@ export const useLinera = () => {
     endGame,
     refreshData: loadUserData,
     retry: initializeLinera,
-    // Expose Linera objects for advanced usage
     wallet: lineraService.getWallet(),
     client: lineraService.getClient(),
     chainId: lineraService.getChainId(),

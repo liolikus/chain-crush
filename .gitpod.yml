@@ -5,7 +5,13 @@
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 
 tasks:
-  - init: npm install && npm run build
-    command: npm run start
+  - init: npm install
+    command: npm start
+
+ports:
+  - port: 3000
+    onOpen: open-browser
+    visibility: public
+
 
 

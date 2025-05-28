@@ -29,57 +29,69 @@ const App = () => {
     const [gameStarted, setGameStarted] = useState(false)
     const [moves, setMoves] = useState(0)
     const [connectionTimeout, setConnectionTimeout] = useState(false)
-    const [timeoutCountdown, setTimeoutCountdown] = useState(15) // 15 second timeout
+    const [timeoutCountdown, setTimeoutCountdown] = useState(60) // 15 second timeout
     
     // Linera blockchain integration
-    const { 
+        const { 
+                isConnected, 
+                isLoading, 
+                userStats, 
+                leaderboard, 
+                submitScore, 
+                startGame: startBlockchainGame, 
+                endGame: endBlockchainGame,
+                status,
+                error
+            } = useLinera()
+
+    useEffect(() => {
+    console.log('🔍 App.js received from useLinera:', { 
         isConnected, 
         isLoading, 
-        userStats, 
-        leaderboard, 
-        submitScore, 
-        startGame: startBlockchainGame, 
-        endGame: endBlockchainGame,
-        status,
-        error
-    } = useLinera()
+        status, 
+        error,
+        connectionTimeout 
+    });
+}, [isConnected, isLoading, status, error, connectionTimeout]);
 
-    // Connection timeout effect
-    useEffect(() => {
-        let timeoutTimer
-        let countdownTimer
+ 
+// Effect to handle successful connection
+useEffect(() => {
+    if (isConnected && !isLoading) {
+        setConnectionTimeout(false);
+        setTimeoutCountdown(60);
+    }
+}, [isConnected, isLoading]);
+
+// Effect to handle connection timeout
+useEffect(() => {
+    let timeoutTimer;
+    let countdownTimer;
+    
+    // Only start timeout if we're loading, not connected, and haven't timed out yet
+    if (isLoading && !isConnected && !connectionTimeout) {
+        // Start countdown timer
+        countdownTimer = setInterval(() => {
+            setTimeoutCountdown(prev => {
+                if (prev <= 1) {
+                    setConnectionTimeout(true);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
         
-        if (isLoading && !isConnected && !connectionTimeout) {
-            // Start countdown timer
-            countdownTimer = setInterval(() => {
-                setTimeoutCountdown(prev => {
-                    if (prev <= 1) {
-                        setConnectionTimeout(true)
-                        return 0
-                    }
-                    return prev - 1
-                })
-            }, 1000)
-            
-            // Set main timeout
-            timeoutTimer = setTimeout(() => {
-                setConnectionTimeout(true)
-            }, 15000) // 15 seconds
-        }
-        
-        // Clear timers if connection succeeds or component unmounts
-        if (isConnected || error) {
-            clearTimeout(timeoutTimer)
-            clearInterval(countdownTimer)
-            setConnectionTimeout(false)
-            setTimeoutCountdown(15)
-        }
-        
-        return () => {
-            clearTimeout(timeoutTimer)
-            clearInterval(countdownTimer)
-        }
-    }, [isLoading, isConnected, connectionTimeout, error])
+        // Set main timeout
+        timeoutTimer = setTimeout(() => {
+            setConnectionTimeout(true);
+        }, 60000);
+    }
+    
+    return () => {
+        clearTimeout(timeoutTimer);
+        clearInterval(countdownTimer);
+    };
+}, [isLoading, isConnected, connectionTimeout]);
 
     const checkForColumnOfFour = useCallback(() => {
         for (let i = 0; i <= 39; i++) {
@@ -455,14 +467,22 @@ const App = () => {
                     </div>
                 </div>
 
-                <div className="blockchain-status">
-                    <div className="status-indicator">
-                        <span className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></span>
-                        <span>Linera Blockchain: {isConnected ? '🟢 Connected' : connectionTimeout ? '🟡 Offline Mode' : '🔴 Connecting...'}</span>
-                        {status !== 'Ready' && status !== 'Error' && !connectionTimeout && (
-                            <span className="status-text"> - {status}</span>
-                        )}
-                    </div>
+                    <div className="blockchain-status">
+                        <div className="status-indicator">
+                            <span className={`status-dot ${isConnected && !isLoading ? 'connected' : 'disconnected'}`}></span>
+                            <span>
+                                Linera Blockchain: {
+                                    isConnected && !isLoading 
+                                        ? '🟢 Connected' 
+                                        : connectionTimeout 
+                                            ? '🟡 Offline Mode' 
+                                            : '🔴 Connecting...'
+                                }
+                            </span>
+                            {status !== 'Ready' && status !== 'Error' && !connectionTimeout && (
+                                <span className="status-text"> - {status}</span>
+                            )}
+                        </div>
                     {userStats && (
                         <div className="user-stats">
                             <p>🪙 Token Balance: {userStats.tokenBalance || userStats.bestScore} | 🎮 Games: {userStats.gamesPlayed}</p>
