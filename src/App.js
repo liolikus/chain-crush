@@ -19,6 +19,34 @@ const candyColors = [
     greenCandy
 ]
 
+// Default leaderboard data to always show
+const defaultLeaderboard = [
+    {
+        playerId: 'player_1...',
+        score: 1500,
+        tokens: 1500,
+        moves: 45,
+        gameTime: 120,
+        timestamp: Date.now() - 3600000
+    },
+    {
+        playerId: 'player_2...',
+        score: 1200,
+        tokens: 1200,
+        moves: 52,
+        gameTime: 180,
+        timestamp: Date.now() - 7200000
+    },
+    {
+        playerId: 'player_3...',
+        score: 800,
+        tokens: 800,
+        moves: 38,
+        gameTime: 95,
+        timestamp: Date.now() - 10800000
+    }
+]
+
 const App = () => {
     const [currentColorArrangement, setCurrentColorArrangement] = useState([])
     const [squareBeingDragged, setSquareBeingDragged] = useState(null)
@@ -29,72 +57,74 @@ const App = () => {
     const [gameStarted, setGameStarted] = useState(false)
     const [moves, setMoves] = useState(0)
     const [connectionTimeout, setConnectionTimeout] = useState(false)
-    const [timeoutCountdown, setTimeoutCountdown] = useState(60) // 15 second timeout
+    const [timeoutCountdown, setTimeoutCountdown] = useState(60)
     
     // Linera blockchain integration
-        const { 
-                isConnected, 
-                isLoading, 
-                userStats, 
-                leaderboard, 
-                submitScore, 
-                startGame: startBlockchainGame, 
-                endGame: endBlockchainGame,
-                status,
-                error,
-                chainId,
-                identity,
-                applicationId
-            } = useLinera()
-
-    useEffect(() => {
-    console.log('🔍 App.js received from useLinera:', { 
+    const { 
         isConnected, 
         isLoading, 
-        status, 
+        userStats, 
+        leaderboard, 
+        submitScore, 
+        startGame: startBlockchainGame, 
+        endGame: endBlockchainGame,
+        status,
         error,
-        connectionTimeout 
-    });
-}, [isConnected, isLoading, status, error, connectionTimeout]);
+        chainId,
+        identity,
+        applicationId
+    } = useLinera()
 
- 
-// Effect to handle successful connection
-useEffect(() => {
-    if (isConnected && !isLoading) {
-        setConnectionTimeout(false);
-        setTimeoutCountdown(60);
-    }
-}, [isConnected, isLoading]);
+    // Use leaderboard data or fallback to default
+    const displayLeaderboard = leaderboard && leaderboard.length > 0 ? leaderboard : defaultLeaderboard
 
-// Effect to handle connection timeout
-useEffect(() => {
-    let timeoutTimer;
-    let countdownTimer;
-    
-    // Only start timeout if we're loading, not connected, and haven't timed out yet
-    if (isLoading && !isConnected && !connectionTimeout) {
-        // Start countdown timer
-        countdownTimer = setInterval(() => {
-            setTimeoutCountdown(prev => {
-                if (prev <= 1) {
-                    setConnectionTimeout(true);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+    useEffect(() => {
+        console.log('🔍 App.js received from useLinera:', { 
+            isConnected, 
+            isLoading, 
+            status, 
+            error,
+            connectionTimeout 
+        });
+    }, [isConnected, isLoading, status, error, connectionTimeout]);
+
+    // Effect to handle successful connection
+    useEffect(() => {
+        if (isConnected && !isLoading) {
+            setConnectionTimeout(false);
+            setTimeoutCountdown(60);
+        }
+    }, [isConnected, isLoading]);
+
+    // Effect to handle connection timeout
+    useEffect(() => {
+        let timeoutTimer;
+        let countdownTimer;
         
-        // Set main timeout
-        timeoutTimer = setTimeout(() => {
-            setConnectionTimeout(true);
-        }, 60000);
-    }
-    
-    return () => {
-        clearTimeout(timeoutTimer);
-        clearInterval(countdownTimer);
-    };
-}, [isLoading, isConnected, connectionTimeout]);
+        // Only start timeout if we're loading, not connected, and haven't timed out yet
+        if (isLoading && !isConnected && !connectionTimeout) {
+            // Start countdown timer
+            countdownTimer = setInterval(() => {
+                setTimeoutCountdown(prev => {
+                    if (prev <= 1) {
+                        setConnectionTimeout(true);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+            
+            // Set main timeout
+            timeoutTimer = setTimeout(() => {
+                setConnectionTimeout(true);
+            }, 60000);
+        }
+        
+        return () => {
+            clearTimeout(timeoutTimer);
+            clearInterval(countdownTimer);
+        };
+    }, [isLoading, isConnected, connectionTimeout]);
 
     const checkForColumnOfFour = useCallback(() => {
         for (let i = 0; i <= 39; i++) {
@@ -367,14 +397,41 @@ useEffect(() => {
             </div>
         )}
         
-        {error && (
+        {error && !isConnected && (
             <div className="error-banner">
                 <p>⚠️ {error}</p>
                 <p><small>Game will continue in offline mode</small></p>
             </div>
         )}
         
-        <div className="main-content">
+        {/* Top row layout: blockchain-info left, game center, leaderboard right */}
+        <div className="top-layout">
+            {/* Blockchain info - top left */}
+            <div className="blockchain-info">
+                <p>
+                    {isConnected 
+                        ? '🪙 Your scores are converted to tokens on the Linera!' 
+                        : connectionTimeout 
+                            ? '💾 Connection timed out. Playing in offline mode.'
+                            : '💾 Playing in offline mode. Blockchain features unavailable.'
+                    }
+                </p>
+                {isConnected && (
+                    <div className="blockchain-details">
+                        <p>🔗 Chain ID: {chainId || 'Loading...'}</p>
+                        <p>📱 Wallet: {identity || 'Loading...'}</p>
+                        <p>🎯 Application: {applicationId || 'Loading...'}</p>
+                    </div>
+                )}
+                {(!isConnected || connectionTimeout) && (
+                    <div className="offline-details">
+                        <p>🔄 Refresh page to retry blockchain connection</p>
+                        <p>🎮 Game fully functional in offline mode</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Game container - top center */}
             <div className="game-container">
                 <div className={`game ${gameOver ? 'game-disabled' : ''}`}>
                     {currentColorArrangement.map((candyColor, index) => (
@@ -466,41 +523,14 @@ useEffect(() => {
                             <span className="status-text"> - {status}</span>
                         )}
                     </div>
-                    {/* User stats section is now hidden via CSS */}
                 </div>
             </div>
-        </div>
 
-        <div className="blockchain-info">
-            <p>
-                {isConnected 
-                    ? '🪙 Your scores are converted to tokens on the Linera!' 
-                    : connectionTimeout 
-                        ? '💾 Connection timed out. Playing in offline mode.'
-                        : '💾 Playing in offline mode. Blockchain features unavailable.'
-                }
-            </p>
-            {isConnected && (
-                <div className="blockchain-details">
-                    <p>🔗 Chain ID: {chainId || 'Loading...'}</p>
-                    <p>📱 Wallet: {identity || 'Loading...'}</p>
-                    <p>🎯 Application: {applicationId || 'Loading...'}</p>
-                </div>
-            )}
-            {(!isConnected || connectionTimeout) && (
-                <div className="offline-details">
-                    <p>🔄 Refresh page to retry blockchain connection</p>
-                    <p>🎮 Game fully functional in offline mode</p>
-                </div>
-            )}
-        </div>
-
-        {/* Leaderboard moved to the very bottom */}
-        {leaderboard.length > 0 && (
+            {/* Leaderboard - top right - ALWAYS SHOW */}
             <div className="leaderboard">
                 <h3>🏆 {isConnected ? 'Blockchain' : 'Mock'} Token Leaderboard</h3>
                 <div className="leaderboard-list">
-                    {leaderboard.slice(0, 5).map((entry, index) => (
+                    {displayLeaderboard.slice(0, 5).map((entry, index) => (
                         <div key={index} className={`leaderboard-entry ${index === 0 ? 'first-place' : ''}`}>
                             <span className="rank">#{index + 1}</span>
                             <span className="score">🪙 {entry.tokens || entry.score} tokens</span>
@@ -514,7 +544,7 @@ useEffect(() => {
                     <p className="mock-notice"><small>* Mock data shown (offline mode)</small></p>
                 )}
             </div>
-        )}
+        </div>
     </div>
 )
        

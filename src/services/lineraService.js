@@ -362,6 +362,8 @@ class LineraService {
   }
 
   getLeaderboard() {
+    // Always return the mock leaderboard for now
+    // In a real implementation, this would fetch from blockchain
     return this.getMockLeaderboard();
   }
 

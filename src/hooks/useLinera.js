@@ -5,7 +5,7 @@ export const useLinera = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userStats, setUserStats] = useState(null);
-  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboard, setLeaderboard] = useState(lineraService.getMockLeaderboard()); // Initialize with mock data
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('Loading');
 
@@ -13,11 +13,12 @@ export const useLinera = () => {
     console.log('🔄 Status update:', newStatus);
     setStatus(newStatus);
     
-    // If we reach Ready status, stop loading
+    // If we reach Ready status, stop loading and clear any errors
     if (newStatus === 'Ready') {
       console.log('✅ Setting isLoading to false and isConnected to true');
       setIsLoading(false);
       setIsConnected(true);
+      setError(null); // Clear any previous errors
     }
     
     // Add a small delay to ensure React processes the state update
@@ -54,7 +55,7 @@ const initializeLinera = useCallback(async () => {
     console.log('🚀 Starting Linera initialization...');
     setIsLoading(true);
     setIsConnected(false);
-    setError(null);
+    setError(null); // Clear any previous errors at start
     
     try {
         console.log('🔗 Initializing Linera connection...');
@@ -73,10 +74,10 @@ const initializeLinera = useCallback(async () => {
         if (success) {
             console.log('✅ Linera connected successfully!');
             
-            // Set these states explicitly
+            // Set these states explicitly and clear error
             setIsConnected(true);
             setIsLoading(false);
-            setError(null);
+            setError(null); // Explicitly clear error on success
             setStatus('Ready');
             
             // Set default data immediately
@@ -93,6 +94,7 @@ const initializeLinera = useCallback(async () => {
             setIsConnected(false);
             setIsLoading(false);
             setStatus('Error');
+            setError('Connection failed - using offline mode');
             setUserStats(lineraService.getDefaultStats());
             setLeaderboard(lineraService.getMockLeaderboard());
         }
