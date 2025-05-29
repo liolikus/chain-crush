@@ -11,6 +11,86 @@ A blockchain-powered Candy Crush styled game built with React and Linera protoco
 - 🏆 Decentralized leaderboard
 - 💾 Offline mode fallback
 
+## TO DO
+
+### 🔐 Authentication & User Management
+- [ ] **User Authentication System**
+  - [ ] Login with wallet connection
+  - [ ] Discord OAuth integration
+  - [ ] User preferences and settings
+
+### 🎨 UI/UX Improvements
+- [ ] **Smooth Animations**
+  - [ ] Falling animations
+  - [ ] Match explosion effects
+  - [ ] Score popup animations
+  - [ ] Smooth transitions between game states
+  - [ ] Particle effects for special matches
+
+### 🏆 Leaderboard & Competition
+- [ ] **Advanced Leaderboard System**
+  - [ ] Separate smart contract for leaderboard management
+  - [ ] Multiple leaderboard categories (daily, weekly, all-time)
+  - [ ] Player ranking system with tiers
+  - [ ] Historical performance tracking
+  - [ ] Seasonal competitions with rewards
+
+### ⛓️ Special Game Mechanics
+- [ ] **Special Chains & Power-ups**
+  - [ ] Lightning chains (clear entire row/column)
+  - [ ] Bomb chains (clear surrounding area)
+  - [ ] Rainbow chains (match any color)
+  - [ ] Multiplier chains (2x, 3x score bonuses)
+  - [ ] Time freeze power-ups
+  - [ ] Chain shuffle abilities
+
+### 🎮 Game Modes
+- [ ] **Multiple Game Modes**
+  - [ ] **Free Mode**: Unlimited time, practice mode
+  - [ ] **Fast Mode**: 30-second quick games
+  - [ ] **Endurance Mode**: Progressively harder levels
+  - [ ] **Puzzle Mode**: Specific objectives to complete
+  - [ ] **Daily Challenge**: Special objectives with bonus rewards
+
+### 👥 Multiplayer Features
+- [ ] **Multiplayer Modes**
+  - [ ] **Turn-based Mode**: Players take turns, highest score wins
+  - [ ] **Parallel Playing**: Real-time simultaneous gameplay
+  - [ ] **Tournament Mode**: Bracket-style competitions
+
+### 🏅 Achievement System
+- [ ] **On-chain Achievements**
+  - [ ] Smart contract for achievement tracking
+  - [ ] NFT badges for major milestones
+  - [ ] Achievement categories:
+    - [ ] Score-based achievements (reach X points)
+    - [ ] Combo achievements (X matches in a row)
+    - [ ] Speed achievements (complete game in X seconds)
+    - [ ] Consistency achievements (play X days in a row)
+    - [ ] Special move achievements (use power-ups X times)
+    - [ ] Social achievements (invite friends, win tournaments)
+
+### 🔧 Technical Improvements
+- [ ] **Performance & Scalability**
+  - [ ] Game state optimization
+  - [ ] Blockchain transaction batching
+  - [ ] Offline game state synchronization
+  - [ ] Progressive Web App (PWA) features
+
+### 🎵 Audio & Visual Enhancements
+- [ ] **Sound Design**
+  - [ ] Match sound effects
+  - [ ] Background music
+  - [ ] Power-up activation sounds
+  - [ ] Victory/defeat audio feedback
+
+### 📊 Analytics & Insights
+- [ ] **Player Analytics**
+  - [ ] Game performance metrics
+  - [ ] Player behavior tracking
+  - [ ] Blockchain transaction analytics
+  - [ ] Leaderboard statistics dashboard
+
 ## Getting Started
 
 ### Prerequisites
