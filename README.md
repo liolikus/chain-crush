@@ -90,6 +90,7 @@ chain-crush/
 
 - Original Candy Crush concept
 - Linera Protocol team
+- @kubowania
 
 ---
 
