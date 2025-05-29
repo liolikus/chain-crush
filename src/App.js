@@ -391,7 +391,7 @@ const App = () => {
                     {status === 'Creating Faucet' && <p>Connecting to faucet...</p>}
                     {status === 'Creating Wallet' && <p>Creating blockchain wallet...</p>}
                     {status === 'Creating Client' && <p>Setting up client...</p>}
-                    {status === 'Claiming Chain' && <p>Connecting...</p>}
+                    {status === 'Claiming Chain' && <p>Connecting to Microchain...</p>}
                     {status === 'Loading Application' && <p>Loading application...</p>}
                     {status === 'Loading User Data' && <p>Loading user data...</p>}
                     <div className="timeout-info">
@@ -417,7 +417,7 @@ const App = () => {
             <div className="blockchain-info">
                 <p>
                     {isConnected 
-                        ? 'Your scores are converted to tokens on the Linera!' 
+                        ? 'Your scores are converted to tokens on the Linera Microchains!' 
                         : connectionTimeout 
                             ? '💾 Connection timed out. Playing in offline mode.'
                             : '💾 Playing in offline mode. Blockchain features unavailable.'
@@ -468,7 +468,7 @@ const App = () => {
                         <h3>⏰ Time: {formatTime(timeLeft)}</h3>
                         <p>🎯 Moves: {moves}</p>
                         {isConnected && gameStarted && (
-                            <p className="blockchain-indicator">⛓️ Score will be recorded on blockchain!</p>
+                            <p className="blockchain-indicator">⛓️ Score will be recorded on microchain!</p>
                         )}
                         {(!isConnected || connectionTimeout) && gameStarted && (
                             <p className="offline-indicator">💾 Playing in offline mode</p>
@@ -484,7 +484,7 @@ const App = () => {
                                 className="start-btn" 
                                 disabled={isLoading && !connectionTimeout}
                             >
-                                {isConnected ? '⛓️ Start ⛓️ onchain Game ' : '🎮 Start Local Game'}
+                                {isConnected ? '⛓️ Start ⛓️ microchain Game ' : '🎮 Start Local Game'}
                             </button>
                         )}
                         
@@ -540,7 +540,7 @@ const App = () => {
 
             {/* Leaderboard - top right - ALWAYS SHOW */}
             <div className="leaderboard">
-                <h3>🏆 {isConnected ? 'Blockchain' : 'Mock'} Token Leaderboard</h3>
+                <h3>🏆 {isConnected ? 'Microchain' : 'Mock'} Leaderboard</h3>
                 <div className="leaderboard-list">
                     {displayLeaderboard.slice(0, 5).map((entry, index) => (
                         <div key={index} className={`leaderboard-entry ${index === 0 ? 'first-place' : ''}`}>
@@ -556,6 +556,11 @@ const App = () => {
                     <p className="mock-notice"><small>* Mock data shown (offline mode)</small></p>
                 )}
             </div>
+        </div>
+
+        {/* Linera Logo - bottom left */}
+        <div className="linera-logo">
+            <img src="/Linera_Red_H.svg" alt="Linera" />
         </div>
     </div>
 )
