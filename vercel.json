@@ -1,6 +1,7 @@
 {
   "headers": [
     {
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Cross-Origin-Embedder-Policy",
