@@ -384,7 +384,7 @@ const App = () => {
                     {status === 'Creating Faucet' && <p>Connecting to faucet...</p>}
                     {status === 'Creating Wallet' && <p>Creating blockchain wallet...</p>}
                     {status === 'Creating Client' && <p>Setting up client...</p>}
-                    {status === 'Claiming Chain' && <p>Claiming blockchain...</p>}
+                    {status === 'Claiming Chain' && <p>Connecting...</p>}
                     {status === 'Loading Application' && <p>Loading application...</p>}
                     {status === 'Loading User Data' && <p>Loading user data...</p>}
                     <div className="timeout-info">
