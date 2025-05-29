@@ -63,7 +63,7 @@ const App = () => {
     const { 
         isConnected, 
         isLoading, 
-        userStats, 
+        // userStats, //disabled till integration
         leaderboard, 
         submitScore, 
         startGame: startBlockchainGame, 
@@ -264,7 +264,12 @@ const App = () => {
         if (isConnected && scoreDisplay > 0) {
             try {
                 const gameTime = 60 - timeLeft;
-                console.log('🪙 Converting final score to tokens on blockchain:', scoreDisplay);
+                const expectedTokens = Math.floor(scoreDisplay / 10);
+                console.log('🪙 Converting score to tokens on blockchain:', {
+                    score: scoreDisplay,
+                    expectedTokens,
+                    ratio: '10:1'
+                });
                 const result = await submitScore(scoreDisplay, gameTime, moves);
                 
                 if (result.success && !result.mock) {
@@ -488,7 +493,12 @@ const App = () => {
                                 <p>Total Moves: <strong>{moves}</strong></p>
                                 <p>Game Time: <strong>{60 - timeLeft}s</strong></p>
                                 {isConnected && scoreDisplay > 0 && (
-                                    <p className="blockchain-success">✅ {scoreDisplay} tokens minted to your account!</p>
+                                    <div className="token-conversion">
+                                        <p className="blockchain-success">
+                                            ✅ {Math.floor(scoreDisplay / 10)} tokens minted to your account!
+                                        </p>
+                                        <p><small>Conversion rate: 10 points = 1 token</small></p>
+                                    </div>
                                 )}
                                 {(!isConnected || connectionTimeout) && (
                                     <p className="offline-notice">💾 Score saved locally (offline mode)</p>

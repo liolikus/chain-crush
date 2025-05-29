@@ -129,17 +129,37 @@ class LineraService {
         return { success: true, mock: true, score, reason: 'backend_not_ready' };
       }
 
-      console.log('🪙 Attempting to mint tokens for score:', score);
+      // Convert score to tokens with 10:1 ratio
+      const tokenAmount = Math.floor(score / 10);
+      
+      console.log('🪙 Converting score to tokens:', { 
+        originalScore: score, 
+        tokenAmount,
+        ratio: '10:1'
+      });
+      
+      // Don't mint tokens if the amount would be 0
+      if (tokenAmount === 0) {
+        console.log('⚠️ Score too low to mint tokens (minimum 10 points needed)');
+        return { 
+          success: true, 
+          mock: true, 
+          score, 
+          tokenAmount: 0,
+          reason: 'score_too_low_for_tokens' 
+        };
+      }
+
       console.log('👤 Identity:', this.identity);
       console.log('🔗 Chain ID:', this.chainId);
       console.log('📍 Account:', this.accountOwner);
 
       // Try multiple approaches in order of preference
       const approaches = [
-        () => this.tryGraphQLTransfer(score),
-        () => this.tryDirectTransfer(score),
-        () => this.trySimpleTransfer(score),
-        () => this.tryCappedTransfer(score)
+        // () => this.tryGraphQLTransfer(tokenAmount, score),
+        // () => this.tryDirectTransfer(tokenAmount, score)
+        // () => this.trySimpleTransfer(tokenAmount, score),
+        () => this.tryCappedTransfer(tokenAmount, score)
       ];
 
       for (let i = 0; i < approaches.length; i++) {
@@ -156,7 +176,8 @@ class LineraService {
             return { 
               success: true, 
               mock: true, 
-              score, 
+              score,
+              tokenAmount,
               reason: 'all_approaches_failed', 
               error: error.message 
             };
@@ -166,11 +187,19 @@ class LineraService {
 
     } catch (error) {
       console.error('Failed to submit score:', error);
-      return { success: true, mock: true, score, reason: 'general_error', error: error.message };
+      const tokenAmount = Math.floor(score / 10);
+      return { 
+        success: true, 
+        mock: true, 
+        score,
+        tokenAmount,
+        reason: 'general_error', 
+        error: error.message 
+      };
     }
   }
 
-  async tryGraphQLTransfer(score) {
+  async tryGraphQLTransfer(tokenAmount, originalScore) {
     if (!this.application) {
       throw new Error('Application not loaded');
     }
@@ -191,7 +220,7 @@ class LineraService {
       }
     `, {
       donor: this.identity,
-      amount: score.toString(),
+      amount: tokenAmount.toString(),
       recipient: { 
         owner: this.identity, 
         chainId: this.chainId 
@@ -218,17 +247,18 @@ class LineraService {
     return { 
       success: true, 
       mock: false, 
-      score: score, 
+      score: originalScore,
+      tokenAmount: tokenAmount,
       method: 'graphql',
       result: parsedResult 
     };
   }
 
-  async tryDirectTransfer(score) {
+  async tryDirectTransfer(tokenAmount, originalScore) {
     console.log('🔄 Trying direct client transfer...');
     
     const transferPromise = this.client.transfer({
-      amount: score,
+      amount: tokenAmount,
       recipient: {
         chain_id: this.chainId,
         owner: this.identity
@@ -236,7 +266,7 @@ class LineraService {
     });
     
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Direct transfer timeout')), 8000)
+      setTimeout(() => reject(new Error('Direct transfer timeout')), 10000)
     );
     
     const result = await Promise.race([transferPromise, timeoutPromise]);
@@ -244,16 +274,18 @@ class LineraService {
     return { 
       success: true, 
       mock: false, 
-      score: score, 
+      score: originalScore,
+      tokenAmount: tokenAmount,
       method: 'direct',
       result: result 
     };
   }
 
-  async trySimpleTransfer(score) {
+  async trySimpleTransfer(tokenAmount, originalScore) {
     console.log('🔄 Trying simple transfer with reduced amount...');
     
-    const reducedAmount = Math.min(score, 50);
+    // Further reduce the amount if still too high
+    const reducedAmount = Math.min(tokenAmount, 5);
     
     const result = await this.client.transfer({
       amount: reducedAmount,
@@ -266,17 +298,19 @@ class LineraService {
     return { 
       success: true, 
       mock: false, 
-      score: reducedAmount, 
-      originalScore: score,
+      score: originalScore,
+      tokenAmount: reducedAmount,
+      originalTokenAmount: tokenAmount,
       method: 'simple',
       result: result 
     };
   }
 
-  async tryCappedTransfer(score) {
+  async tryCappedTransfer(tokenAmount, originalScore) {
     console.log('🔄 Trying final capped transfer...');
     
-    const cappedAmount = Math.min(score, 10);
+    // Cap at 1 token minimum
+    const cappedAmount = tokenAmount;
     
     const result = await this.client.transfer({
       amount: cappedAmount,
@@ -289,8 +323,9 @@ class LineraService {
     return { 
       success: true, 
       mock: false, 
-      score: cappedAmount, 
-      originalScore: score,
+      score: originalScore,
+      tokenAmount: cappedAmount,
+      originalTokenAmount: tokenAmount,
       method: 'capped',
       result: result 
     };

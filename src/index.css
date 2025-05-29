@@ -51,7 +51,12 @@ body {
   height: 560px;
   display: flex;
   flex-wrap: wrap;
+  border: 3px solid #444;
+  border-radius: 8px;
+  background-color: transparent;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
+
 
 .game img {
   width: 70px;
