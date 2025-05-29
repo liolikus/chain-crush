@@ -204,6 +204,8 @@ const initializeLinera = useCallback(async () => {
     wallet: lineraService.getWallet(),
     client: lineraService.getClient(),
     chainId: lineraService.getChainId(),
+    identity: lineraService.getIdentity(),
+    applicationId: lineraService.applicationId,
     application: lineraService.getApplication(),
     accountOwner: lineraService.getAccountOwner()
   };

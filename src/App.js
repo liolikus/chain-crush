@@ -41,7 +41,10 @@ const App = () => {
                 startGame: startBlockchainGame, 
                 endGame: endBlockchainGame,
                 status,
-                error
+                error,
+                chainId,
+                identity,
+                applicationId
             } = useLinera()
 
     useEffect(() => {
@@ -372,26 +375,6 @@ useEffect(() => {
         )}
         
         <div className="main-content">
-            {leaderboard.length > 0 && (
-                <div className="leaderboard">
-                    <h3>🏆 {isConnected ? 'Blockchain' : 'Mock'} Token Leaderboard</h3>
-                    <div className="leaderboard-list">
-                        {leaderboard.slice(0, 5).map((entry, index) => (
-                            <div key={index} className={`leaderboard-entry ${index === 0 ? 'first-place' : ''}`}>
-                                <span className="rank">#{index + 1}</span>
-                                <span className="score">🪙 {entry.tokens || entry.score} tokens</span>
-                                <span className="moves">🎮 {entry.moves} moves</span>
-                                <span className="player">👤 {entry.playerId}</span>
-                                {index === 0 && <span className="crown">👑</span>}
-                            </div>
-                        ))}
-                    </div>
-                    {!isConnected && (
-                        <p className="mock-notice"><small>* Mock data shown (offline mode)</small></p>
-                    )}
-                </div>
-            )}
-
             <div className="game-container">
                 <div className={`game ${gameOver ? 'game-disabled' : ''}`}>
                     {currentColorArrangement.map((candyColor, index) => (
@@ -467,29 +450,23 @@ useEffect(() => {
                     </div>
                 </div>
 
-                    <div className="blockchain-status">
-                        <div className="status-indicator">
-                            <span className={`status-dot ${isConnected && !isLoading ? 'connected' : 'disconnected'}`}></span>
-                            <span>
-                                Linera Blockchain: {
-                                    isConnected && !isLoading 
-                                        ? '🟢 Connected' 
-                                        : connectionTimeout 
-                                            ? '🟡 Offline Mode' 
-                                            : '🔴 Connecting...'
-                                }
-                            </span>
-                            {status !== 'Ready' && status !== 'Error' && !connectionTimeout && (
-                                <span className="status-text"> - {status}</span>
-                            )}
-                        </div>
-                    {userStats && (
-                        <div className="user-stats">
-                            <p>🪙 Token Balance: {userStats.tokenBalance || userStats.bestScore} | 🎮 Games: {userStats.gamesPlayed}</p>
-                            <p>📊 Total Tokens: {userStats.totalScore} | 📈 Average: {userStats.averageScore}</p>
-                            <p>👤 Player ID: {userStats.playerId.substring(0, 12)}...</p>
-                        </div>
-                    )}
+                <div className="blockchain-status">
+                    <div className="status-indicator">
+                        <span className={`status-dot ${isConnected && !isLoading ? 'connected' : 'disconnected'}`}></span>
+                        <span>
+                            Linera Blockchain: {
+                                isConnected && !isLoading 
+                                    ? '🟢 Connected' 
+                                    : connectionTimeout 
+                                        ? '🟡 Offline Mode' 
+                                        : '🔴 Connecting...'
+                            }
+                        </span>
+                        {status !== 'Ready' && status !== 'Error' && !connectionTimeout && (
+                            <span className="status-text"> - {status}</span>
+                        )}
+                    </div>
+                    {/* User stats section is now hidden via CSS */}
                 </div>
             </div>
         </div>
@@ -497,7 +474,7 @@ useEffect(() => {
         <div className="blockchain-info">
             <p>
                 {isConnected 
-                    ? '🪙 Your scores are converted to tokens on the Linera blockchain!' 
+                    ? '🪙 Your scores are converted to tokens on the Linera!' 
                     : connectionTimeout 
                         ? '💾 Connection timed out. Playing in offline mode.'
                         : '💾 Playing in offline mode. Blockchain features unavailable.'
@@ -505,10 +482,9 @@ useEffect(() => {
             </p>
             {isConnected && (
                 <div className="blockchain-details">
-                    <p>🔗 Chain ID: {status === 'Ready' ? 'Connected' : 'Connecting...'}</p>
-                    <p>📱 Wallet: {status === 'Ready' ? 'Active' : 'Creating...'}</p>
-                    <p>🎯 Application: {status === 'Ready' ? 'Loaded' : 'Loading...'}</p>
-                    <p>🪙 Fungible Token Contract: {process.env.REACT_APP_APPLICATION_ID || '11c588096b85b439a3281944ef68d641f39bf20de3b454f8e2764933b177bacc'}</p>
+                    <p>🔗 Chain ID: {chainId || 'Loading...'}</p>
+                    <p>📱 Wallet: {identity || 'Loading...'}</p>
+                    <p>🎯 Application: {applicationId || 'Loading...'}</p>
                 </div>
             )}
             {(!isConnected || connectionTimeout) && (
@@ -518,6 +494,27 @@ useEffect(() => {
                 </div>
             )}
         </div>
+
+        {/* Leaderboard moved to the very bottom */}
+        {leaderboard.length > 0 && (
+            <div className="leaderboard">
+                <h3>🏆 {isConnected ? 'Blockchain' : 'Mock'} Token Leaderboard</h3>
+                <div className="leaderboard-list">
+                    {leaderboard.slice(0, 5).map((entry, index) => (
+                        <div key={index} className={`leaderboard-entry ${index === 0 ? 'first-place' : ''}`}>
+                            <span className="rank">#{index + 1}</span>
+                            <span className="score">🪙 {entry.tokens || entry.score} tokens</span>
+                            <span className="moves">🎮 {entry.moves} moves</span>
+                            <span className="player">👤 {entry.playerId}</span>
+                            {index === 0 && <span className="crown">👑</span>}
+                        </div>
+                    ))}
+                </div>
+                {!isConnected && (
+                    <p className="mock-notice"><small>* Mock data shown (offline mode)</small></p>
+                )}
+            </div>
+        )}
     </div>
 )
        

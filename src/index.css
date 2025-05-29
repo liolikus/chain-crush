@@ -28,7 +28,6 @@ body {
   min-height: 100vh;
 }
 
-
 .main-content {
   display: flex;
   flex-direction: column;
@@ -222,6 +221,86 @@ body {
   color: #ccc;
 }
 
+/* Hide user stats */
+.user-stats {
+  display: none;
+}
+
+/* Leaderboard styles - positioned at bottom */
+.leaderboard {
+  width: 560px;
+  margin: 30px auto 20px auto;
+  padding: 20px;
+  background-color: #222;
+  border-radius: 8px;
+  align-self: center;
+}
+
+.leaderboard h3 {
+  margin: 0 0 15px 0;
+  text-align: center;
+  color: #fff;
+  font-size: 18px;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #333;
+  border-radius: 6px;
+  position: relative;
+}
+
+.leaderboard-entry.first-place {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  font-weight: bold;
+}
+
+.leaderboard-entry .rank {
+  font-weight: bold;
+  min-width: 30px;
+}
+
+.leaderboard-entry .score {
+  flex: 1;
+  text-align: center;
+}
+
+.leaderboard-entry .moves {
+  flex: 1;
+  text-align: center;
+}
+
+.leaderboard-entry .player {
+  flex: 1;
+  text-align: right;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.leaderboard-entry .crown {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  font-size: 20px;
+}
+
+.mock-notice {
+  text-align: center;
+  margin: 10px 0 0 0;
+  color: #ccc;
+  font-style: italic;
+}
+
 /* CSP error handling */
 .error-banner {
   width: 560px;
@@ -270,4 +349,3 @@ body {
   background: linear-gradient(135deg, #ff8a80, #ff6b6b);
   transform: translateY(-1px);
 }
-
