@@ -312,21 +312,69 @@ body {
   transform: translateY(-1px);
 }
 
-.game-over {
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.game-over-popup {
+  background: linear-gradient(135deg, #222, #333);
+  padding: 40px;
+  border-radius: 16px;
+  border: 3px solid #af1b16;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   text-align: center;
-  padding: 20px;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  margin-top: 10px;
+  min-width: 400px;
+  animation: slideIn 0.3s ease;
 }
 
-.game-over h2 {
-  margin: 0 0 15px 0;
-  color: #4CAF50;
+.game-over-popup h2 {
+  margin: 0 0 20px 0;
+  color: #ac230b;
+  font-size: 28px;
 }
 
-.game-over p {
-  margin: 5px 0;
+.game-over-popup p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Mobile responsive for popup */
+@media (max-width: 768px) {
+  .game-over-popup {
+    min-width: 280px;
+    padding: 30px 20px;
+    margin: 20px;
+  }
+  
+  .game-over-popup h2 {
+    font-size: 24px;
+  }
 }
 
 .blockchain-success {

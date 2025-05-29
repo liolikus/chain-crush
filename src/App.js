@@ -558,6 +558,32 @@ const App = () => {
             </div>
         </div>
 
+        {/* Game Over Popup */}
+        {gameOver && (
+            <div className="game-over-overlay">
+                <div className="game-over-popup">
+                    <h2>🎉 Game Over!</h2>
+                    <p>Final Score: <strong>{scoreDisplay}</strong></p>
+                    <p>Total Moves: <strong>{moves}</strong></p>
+                    <p>Game Time: <strong>{60 - timeLeft}s</strong></p>
+                    {isConnected && scoreDisplay > 0 && (
+                        <div className="token-conversion">
+                            <p className="blockchain-success">
+                                ✅ {Math.floor(scoreDisplay / 10)} tokens minted to your account!
+                            </p>
+                            <p><small>Conversion rate: 10 points = 1 token</small></p>
+                        </div>
+                    )}
+                    {(!isConnected || connectionTimeout) && (
+                        <p className="offline-notice">💾 Score saved locally (offline mode)</p>
+                    )}
+                    <button onClick={resetGame} className="restart-btn">
+                        🔄 Play Again
+                    </button>
+                </div>
+            </div>
+        )}
+
         {/* Linera Logo - bottom left */}
         <div className="linera-logo">
             <img src="/Linera_Red_H.svg" alt="Linera" />

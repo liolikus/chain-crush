@@ -11,6 +11,20 @@ A blockchain-powered Candy Crush styled game built with React and Linera protoco
 - 🏆 Decentralized leaderboard
 - 💾 Offline mode fallback
 
+## Blockchain Integration
+
+This game integrates with the Linera protocol to:
+- Convert game scores to tokens
+- Maintain a decentralized leaderboard
+- Provide verifiable game sessions
+
+## Game Rules
+
+- Match 3 or more chains in a row or column
+- Score points for each match (3 chains = 3 points, 4 chains = 4 points)
+- 60-second time limit
+- Scores are converted to tokens when connected
+
 ## TO DO
 
 ### 🔐 Authentication & User Management
@@ -119,12 +133,6 @@ npm start
 
 4. Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-## Blockchain Integration
-
-This game integrates with the Linera protocol to:
-- Convert game scores to tokens
-- Maintain a decentralized leaderboard
-- Provide verifiable game sessions
 
 ### Environment Variables
 
@@ -134,13 +142,6 @@ Create a `.env` file in the root directory:
 REACT_APP_LINERA_FAUCET=https://faucet.testnet-babbage.linera.net
 REACT_APP_APPLICATION_ID=your_application_id_here
 ```
-
-## Game Rules
-
-- Match 3 or more chains in a row or column
-- Score points for each match (3 chains = 3 points, 4 chains = 4 points)
-- 60-second time limit
-- Scores are converted to tokens when connected
 
 ## Technology Stack
 
@@ -164,7 +165,6 @@ chain-crush/
 │   ├── src/               # Rust contract code
 └── public/                # Static assets
 ```
-
 
 ## Acknowledgments
 
