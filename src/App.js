@@ -328,9 +328,11 @@ const App = () => {
             setTimeLeft(60)
             setScoreDisplay(0)
             setMoves(0)
-            setCurrentColorArrangement([])
+            // Don't clear the board - keep it populated
+            // setCurrentColorArrangement([])
+            createBoard() // Create a new board instead
         }
-    }, [isConnected, gameStarted, endBlockchainGame])
+    }, [isConnected, gameStarted, endBlockchainGame, createBoard])
 
     const formatTime = useCallback((seconds) => {
         const mins = Math.floor(seconds / 60)
@@ -415,7 +417,7 @@ const App = () => {
             <div className="blockchain-info">
                 <p>
                     {isConnected 
-                        ? '🪙 Your scores are converted to tokens on the Linera!' 
+                        ? 'Your scores are converted to tokens on the Linera!' 
                         : connectionTimeout 
                             ? '💾 Connection timed out. Playing in offline mode.'
                             : '💾 Playing in offline mode. Blockchain features unavailable.'
@@ -482,7 +484,7 @@ const App = () => {
                                 className="start-btn" 
                                 disabled={isLoading && !connectionTimeout}
                             >
-                                {isConnected ? '🚀 Start Blockchain Game' : '🎮 Start Local Game'}
+                                {isConnected ? '⛓️ Start ⛓️ onchain Game ' : '🎮 Start Local Game'}
                             </button>
                         )}
                         
