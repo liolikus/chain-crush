@@ -427,7 +427,6 @@ body {
 
 /* Leaderboard styles - positioned top right */
 .leaderboard {
-  justify-self: end;
   max-width: 350px;
   padding: 20px;
   background-color: #222;
@@ -547,6 +546,7 @@ body {
   font-size: 14px;
   cursor: pointer;
   margin-top: 10px;
+  transition: all 0.3s ease;
 }
 
 .retry-btn:hover {
@@ -558,7 +558,8 @@ body {
 @media (max-width: 1200px) {
   .top-layout {
     grid-template-columns: 1fr;
-    gap: 20px;
+
+    gap: 30px;
     text-align: center;
   }
   

@@ -100,7 +100,7 @@ const initializeLinera = useCallback(async () => {
         }
     } catch (error) {
         console.error('Linera initialization failed:', error);
-        setError('Failed to connect to Linera network: ' + error.message);
+        setError('Try refresh: ' + error.message);
         setIsConnected(false);
         setIsLoading(false);
         setStatus('Error');

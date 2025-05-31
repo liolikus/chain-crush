@@ -523,7 +523,7 @@ const App = () => {
                     <div className="status-indicator">
                         <span className={`status-dot ${isConnected && !isLoading ? 'connected' : 'disconnected'}`}></span>
                         <span>
-                            Linera Blockchain: {
+                            Linera Microchain: {
                                 isConnected && !isLoading 
                                     ? '🟢 Connected' 
                                     : connectionTimeout 
