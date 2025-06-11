@@ -1,6 +1,9 @@
-import {useEffect, useState, useCallback} from 'react'
+import {useEffect, useState, useCallback, useMemo} from 'react'
 import ScoreBoard from './components/ScoreBoard'
 import { useLinera } from './hooks/useLinera'
+import { validateLoginInput, authenticateUser, saveUserSession, loadSavedSession, clearUserSession } from './utils/authUtils'
+import { resetLeaderboardData } from './utils/adminUtils'
+import { getDisplayLeaderboard, updateUserStats } from './utils/leaderboardUtils'
 import blueCandy from './images/blue-candy.png'
 import greenCandy from './images/green-candy.png'
 import orangeCandy from './images/orange-candy.png'
@@ -19,33 +22,8 @@ const candyColors = [
     greenCandy
 ]
 
-// Default leaderboard data to always show
-const defaultLeaderboard = [
-    {
-        playerId: 'player_1...',
-        score: 1500,
-        tokens: 1500,
-        moves: 45,
-        gameTime: 120,
-        timestamp: Date.now() - 3600000
-    },
-    {
-        playerId: 'player_2...',
-        score: 1200,
-        tokens: 1200,
-        moves: 52,
-        gameTime: 180,
-        timestamp: Date.now() - 7200000
-    },
-    {
-        playerId: 'player_3...',
-        score: 800,
-        tokens: 800,
-        moves: 38,
-        gameTime: 95,
-        timestamp: Date.now() - 10800000
-    }
-]
+
+const ADMIN_USERNAMES = ['admin', 'moderator', 'chaincrush_admin']
 
 const App = () => {
     const [currentColorArrangement, setCurrentColorArrangement] = useState([])
@@ -64,6 +42,8 @@ const App = () => {
     const [password, setPassword] = useState('')
     const [loginError, setLoginError] = useState('')
     const [currentUser, setCurrentUser] = useState(null)
+    const [isAdmin, setIsAdmin] = useState(false)
+    const [showAdminPanel, setShowAdminPanel] = useState(false)
     
     // Linera blockchain integration
     const { 
@@ -81,123 +61,88 @@ const App = () => {
         applicationId
     } = useLinera()
 
-    // Use leaderboard data or fallback to default
-    const displayLeaderboard = leaderboard && leaderboard.length > 0 ? leaderboard : defaultLeaderboard
+    // Replace the displayLeaderboard line with:
+    const displayLeaderboard = useMemo(() => {
+        return getDisplayLeaderboard(leaderboard);
+    }, [leaderboard]);
 
     // Replace the existing useEffect that checks for saved login
     useEffect(() => {
-        const savedUser = localStorage.getItem('chainCrushUser')
-        const savedCredentials = localStorage.getItem('chainCrushCredentials')
+        const { userData, credentials } = loadSavedSession();
         
-        if (savedUser) {
-            const userData = JSON.parse(savedUser)
-            setCurrentUser(userData)
-            setIsLoggedIn(true)
+        if (userData) {
+            setCurrentUser(userData);
+            setIsLoggedIn(true);
+            setIsAdmin(userData.isAdmin || false);
         }
         
-        if (savedCredentials) {
-            const credentials = JSON.parse(savedCredentials)
-            setUsername(credentials.username)
-            setPassword(credentials.password)
+        if (credentials) {
+            setUsername(credentials.username);
+            setPassword(credentials.password);
         }
-    }, [])
+    }, []);
 
     // Login function
     const handleLogin = useCallback((e) => {
-        e.preventDefault()
-        setLoginError('')
+        e.preventDefault();
+        setLoginError('');
 
-        if (!username.trim() || !password.trim()) {
-            setLoginError('Please enter both username and password')
-            return
+        const validationError = validateLoginInput(username, password);
+        if (validationError) {
+            setLoginError(validationError);
+            return;
         }
 
-        if (username.length < 3) {
-            setLoginError('Username must be at least 3 characters long')
-            return
+        try {
+            const { userData, isUserAdmin } = authenticateUser(username, password);
+            saveUserSession(userData);
+
+            setCurrentUser(userData);
+            setIsLoggedIn(true);
+            setIsAdmin(isUserAdmin);
+            setShowLogin(false);
+        } catch (error) {
+            setLoginError(error.message);
         }
-
-        if (password.length < 4) {
-            setLoginError('Password must be at least 4 characters long')
-            return
-        }
-
-
-
-
-
-
-
-        // Check if user already exists, if not create new user
-        const existingUser = localStorage.getItem(`chainCrushUser_${username.trim()}`)
-        let userData
-
-        if (existingUser) {
-            userData = JSON.parse(existingUser)
-            // Verify password
-            if (userData.password !== password) {
-                setLoginError('Incorrect password for this username')
-                return
-            }
-            // Update last login time
-            userData.lastLogin = Date.now()
-        } else {
-            // Create new user
-            userData = {
-                username: username.trim(),
-                password: password,
-                createdAt: Date.now(),
-                lastLogin: Date.now(),
-                gamesPlayed: 0,
-                totalScore: 0,
-                bestScore: 0
-            }
-        }
-
-        // Save user data and credentials
-        localStorage.setItem(`chainCrushUser_${username.trim()}`, JSON.stringify(userData))
-        localStorage.setItem('chainCrushUser', JSON.stringify(userData))
-        localStorage.setItem('chainCrushCredentials', JSON.stringify({
-            username: username.trim(),
-            password: password
-        }))
-
-        setCurrentUser(userData)
-        setIsLoggedIn(true)
-        setShowLogin(false)
-
-
-    }, [username, password])
+    }, [username, password]);
 
     // Logout function
     const handleLogout = useCallback(() => {
-        
-        localStorage.removeItem('chainCrushUser') 
-        setCurrentUser(null)
-        setIsLoggedIn(false)
-        setGameStarted(false)
-        setGameOver(false)
-        setScoreDisplay(0)
-        setMoves(0)
-        setTimeLeft(60)
-    }, [])
+        clearUserSession();
+        setCurrentUser(null);
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+        setShowAdminPanel(false);
+        setGameStarted(false);
+        setGameOver(false);
+        setScoreDisplay(0);
+        setMoves(0);
+        setTimeLeft(60);
+    }, []);
 
     // Update user stats after game
-    const updateUserStats = useCallback((finalScore) => {
-        if (!currentUser) return
+    const updateUserStats = useCallback((finalScore, gameTime, totalMoves) => {
+        if (!currentUser) return;
 
         const updatedUser = {
             ...currentUser,
             gamesPlayed: currentUser.gamesPlayed + 1,
             totalScore: currentUser.totalScore + finalScore,
             bestScore: Math.max(currentUser.bestScore, finalScore),
-            lastPlayed: Date.now()
-        }
+            lastPlayed: Date.now(),
+            // Add average calculations
+            averageMoves: Math.round(((currentUser.averageMoves || 0) * (currentUser.gamesPlayed || 0) + totalMoves) / (currentUser.gamesPlayed + 1)),
+            averageTime: Math.round(((currentUser.averageTime || 0) * (currentUser.gamesPlayed || 0) + gameTime) / (currentUser.gamesPlayed + 1)),
+            // Track last game stats
+            lastGameScore: finalScore,
+            lastGameMoves: totalMoves,
+            lastGameTime: gameTime
+        };
 
         // Save to both current session and permanent user storage
-        localStorage.setItem('chainCrushUser', JSON.stringify(updatedUser))
-        localStorage.setItem(`chainCrushUser_${currentUser.username}`, JSON.stringify(updatedUser))
-        setCurrentUser(updatedUser)
+        localStorage.setItem('chainCrushUser', JSON.stringify(updatedUser));
+        localStorage.setItem(`chainCrushUser_${currentUser.username}`, JSON.stringify(updatedUser));
+        setCurrentUser(updatedUser);
     }, [currentUser])
 
     useEffect(() => {
@@ -383,12 +328,13 @@ const App = () => {
     }, [])
 
     const handleGameOver = useCallback(async () => {
-        // Add this line at the very beginning
-        updateUserStats(scoreDisplay)
+        const gameTime = 60 - timeLeft;
+        
+        // Update user stats with detailed info
+        updateUserStats(scoreDisplay, gameTime, moves);
 
         if (isConnected && scoreDisplay > 0) {
             try {
-                const gameTime = 60 - timeLeft;
                 const expectedTokens = Math.floor(scoreDisplay / 10);
                 console.log('🪙 Converting score to tokens on blockchain:', {
                     score: scoreDisplay,
@@ -457,9 +403,7 @@ const App = () => {
             setTimeLeft(60)
             setScoreDisplay(0)
             setMoves(0)
-            // Don't clear the board - keep it populated
-            // setCurrentColorArrangement([])
-            createBoard() // Create a new board instead
+            createBoard()
         }
     }, [isConnected, gameStarted, endBlockchainGame, createBoard])
 
@@ -472,6 +416,53 @@ const App = () => {
     const proceedWithLocalGame = useCallback(() => {
         setConnectionTimeout(true)
     }, [])
+
+    const resetLeaderboard = useCallback(() => {
+        if (!isAdmin) return;
+        
+        if (window.confirm('Are you sure you want to reset the leaderboard? This will clear all user scores but keep accounts.')) {
+            // Reset all user scores
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('chainCrushUser_')) {
+                    try {
+                        const userData = JSON.parse(localStorage.getItem(key));
+                        if (userData) {
+                            userData.bestScore = 0;
+                            userData.totalScore = 0;
+                            userData.gamesPlayed = 0;
+                            userData.averageMoves = 0;
+                            userData.averageTime = 0;
+                            localStorage.setItem(key, JSON.stringify(userData));
+                        }
+                    } catch (error) {
+                        console.error('Error resetting user data:', error);
+                    }
+                }
+            });
+            
+            // Update current user if logged in
+            if (currentUser) {
+                const resetUser = {
+                    ...currentUser,
+                    bestScore: 0,
+                    totalScore: 0,
+                    gamesPlayed: 0,
+                    averageMoves: 0,
+                    averageTime: 0
+                };
+                setCurrentUser(resetUser);
+                localStorage.setItem('chainCrushUser', JSON.stringify(resetUser));
+            }
+            
+            console.log('🔧 Admin: Leaderboard reset completed');
+            alert('Leaderboard has been reset! All scores cleared but user accounts preserved.');
+        }
+    }, [isAdmin, currentUser])
+
+    const toggleAdminPanel = useCallback(() => {
+        if (!isAdmin) return
+        setShowAdminPanel(prev => !prev)
+    }, [isAdmin])
 
     // Timer effect
     useEffect(() => {
@@ -608,7 +599,10 @@ const App = () => {
         {isLoggedIn && (
             <div className="user-bar">
                 <div className="user-info">
-                    <span className="welcome">👋 Welcome, <strong>{currentUser?.username}</strong>!</span>
+                    <span className={`welcome ${isAdmin ? 'admin' : ''}`}>
+                        👋 Welcome, <strong>{currentUser?.username}</strong>!
+                        {isAdmin && <span className="admin-badge">Admin</span>}
+                    </span>
                     <div className="user-stats">
                         <span>🎮 Games: {currentUser?.gamesPlayed || 0}</span>
                         <span>🏆 Best: {currentUser?.bestScore || 0}</span>
@@ -619,6 +613,45 @@ const App = () => {
                     🚪 Logout
                 </button>
             </div>
+        )}
+
+        {/* Admin Controls */}
+        {isAdmin && (
+            <>
+                {!showAdminPanel ? (
+                    <button 
+                        onClick={toggleAdminPanel}
+                        className="admin-toggle"
+                        title="Admin Panel"
+                    >
+                        ⚙️
+                    </button>
+                ) : (
+                    <div className="admin-controls">
+                        <div className="admin-header">
+                            <h3>Admin Panel</h3>
+                            <button 
+                                onClick={toggleAdminPanel}
+                                className="close-btn"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="admin-actions">
+                            <button 
+                                onClick={resetLeaderboard}
+                                className="admin-btn danger"
+                            >
+                                🗑️ Reset Leaderboard
+                            </button>
+                            <div className="admin-info">
+                                <p><small>🔧 Admin Mode Active</small></p>
+                                <p><small>Chain: {isConnected ? 'Connected' : 'Offline'}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </>
         )}
 
         {/* Top row layout: blockchain-info left, game center, leaderboard right */}
@@ -752,21 +785,39 @@ const App = () => {
             </div>
 
             {/* Leaderboard - top right - ALWAYS SHOW */}
-            <div className="leaderboard">
-                <h3>🏆 {isConnected ? 'Microchain' : 'Mock'} Leaderboard</h3>
+            <div className={`leaderboard ${isAdmin ? 'admin-mode' : ''}`}>
+                <h3>🏆 {isConnected ? 'Microchain' : 'Local'} Leaderboard</h3>
                 <div className="leaderboard-list">
                     {displayLeaderboard.slice(0, 5).map((entry, index) => (
-                        <div key={index} className={`leaderboard-entry ${index === 0 ? 'first-place' : ''}`}>
-                            <span className="rank">#{index + 1}</span>
-                            <span className="score">🪙 {entry.tokens || entry.score} tokens</span>
-                            <span className="moves">🎮 {entry.moves} moves</span>
-                            <span className="player">👤 {entry.playerId}</span>
-                            {index === 0 && <span className="crown">👑</span>}
+                        <div key={index} className={`leaderboard-entry ${index === 0 && !entry.isEmpty ? 'first-place' : ''} ${entry.isEmpty ? 'empty-entry' : ''}`}>
+                            {entry.isEmpty ? (
+                                <>
+                                    <span className="empty-message">🎮 Play your first game to appear on the leaderboard!</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="rank">#{index + 1}</span>
+                                    <span className="score">🪙 {entry.tokens || entry.score}</span>
+                                    <span className="moves">🎮 {entry.moves}m</span>
+                                    <span className="player">👤 {entry.playerId}</span>
+                                    {index === 0 && <span className="crown">👑</span>}
+                                </>
+                            )}
                         </div>
                     ))}
                 </div>
-                {!isConnected && (
-                    <p className="mock-notice"><small>* Mock data shown (offline mode)</small></p>
+                {!isConnected && displayLeaderboard.length > 0 && !displayLeaderboard[0].isEmpty && (
+                    <p className="local-notice"><small>* Local leaderboard (offline mode)</small></p>
+                )}
+                {isAdmin && (
+                    <div className="admin-leaderboard-actions">
+                        <button 
+                            onClick={resetLeaderboard}
+                            className="admin-leaderboard-btn"
+                        >
+                            🗑️ Reset
+                        </button>
+                    </div>
                 )}
             </div>
         </div>
