@@ -438,7 +438,6 @@ body {
   margin: 0 0 15px 0;
   text-align: center;
   color: #fff;
-  font-size: 18px;
 }
 
 .leaderboard-list {
@@ -456,7 +455,10 @@ body {
   background-color: #333;
   border-radius: 6px;
   position: relative;
-  font-size: 12px;
+}
+
+.leaderboard-entry .games {
+  text-align: center;
 }
 
 .leaderboard-entry.first-place {
@@ -475,13 +477,12 @@ body {
 }
 
 .leaderboard-entry .moves {
-  font-size: 10px;
+  text-align: center;
 }
 
 .leaderboard-entry .player {
   text-align: right;
   opacity: 0.8;
-  font-size: 10px;
   max-width: 60px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -861,17 +862,13 @@ body {
   }
 }
 
-/* Remove or comment out these unused styles */
-/*
-.admin-btn:not(.danger) styles can be simplified since we only use danger buttons now
-*/
 
 /* Keep only the danger button styles and simplify admin-actions */
 .admin-actions {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Increased gap since we have fewer buttons */
-  align-items: center; /* Center the single button */
+  gap: 15px; 
+  align-items: center; 
 }
 
 .admin-info {

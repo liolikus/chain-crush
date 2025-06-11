@@ -6,11 +6,11 @@ export const getRealLeaderboard = () => {
         if (key.startsWith('chainCrushUser_')) {
             try {
                 const userData = JSON.parse(localStorage.getItem(key));
-                if (userData && userData.bestScore > 0) {
+                if (userData && userData.totalScore > 0) {
                     allUsers.push({
                         playerId: userData.username,
-                        score: userData.bestScore,
-                        tokens: userData.bestScore, // In offline mode, tokens = score
+                        score: userData.totalScore,
+                        tokens: userData.totalScore, // In offline mode, tokens = score
                         moves: userData.averageMoves || 0,
                         gameTime: userData.averageTime || 0,
                         gamesPlayed: userData.gamesPlayed || 0,
@@ -24,15 +24,12 @@ export const getRealLeaderboard = () => {
         }
     });
     
-    // Sort by best score (descending)
-    return allUsers.sort((a, b) => b.score - a.score);
+    // Sort by total score (descending)
+    return allUsers.sort((a, b) => b.totalScore - a.totalScore);
 };
 
-export const getDisplayLeaderboard = (leaderboard) => {
-    if (leaderboard && leaderboard.length > 0) {
-        return leaderboard; // Use blockchain leaderboard if available
-    }
-    
+export const getDisplayLeaderboard = (leaderboard, currentUser) => {
+    // Always use real leaderboard data, ignore blockchain leaderboard for now
     const realLeaderboard = getRealLeaderboard();
     
     // If no real users, show placeholder message
@@ -56,13 +53,13 @@ export const updateUserStats = (currentUser, finalScore, gameTime, totalMoves, s
 
     const updatedUser = {
         ...currentUser,
-        gamesPlayed: currentUser.gamesPlayed + 1,
-        totalScore: currentUser.totalScore + finalScore,
-        bestScore: Math.max(currentUser.bestScore, finalScore),
+        gamesPlayed: (currentUser.gamesPlayed || 0) + 1,
+        totalScore: (currentUser.totalScore || 0) + finalScore,
+        bestScore: Math.max(currentUser.bestScore || 0, finalScore),
         lastPlayed: Date.now(),
         // Add average calculations
-        averageMoves: Math.round(((currentUser.averageMoves || 0) * (currentUser.gamesPlayed || 0) + totalMoves) / (currentUser.gamesPlayed + 1)),
-        averageTime: Math.round(((currentUser.averageTime || 0) * (currentUser.gamesPlayed || 0) + gameTime) / (currentUser.gamesPlayed + 1)),
+        averageMoves: Math.round((((currentUser.averageMoves || 0) * (currentUser.gamesPlayed || 0)) + totalMoves) / ((currentUser.gamesPlayed || 0) + 1)),
+        averageTime: Math.round((((currentUser.averageTime || 0) * (currentUser.gamesPlayed || 0)) + gameTime) / ((currentUser.gamesPlayed || 0) + 1)),
         // Track last game stats
         lastGameScore: finalScore,
         lastGameMoves: totalMoves,
@@ -73,4 +70,6 @@ export const updateUserStats = (currentUser, finalScore, gameTime, totalMoves, s
     localStorage.setItem('chainCrushUser', JSON.stringify(updatedUser));
     localStorage.setItem(`chainCrushUser_${currentUser.username}`, JSON.stringify(updatedUser));
     setCurrentUser(updatedUser);
+    
+    console.log('📊 User stats updated:', updatedUser);
 };

@@ -1,5 +1,4 @@
 import {useEffect, useState, useCallback, useMemo} from 'react'
-import ScoreBoard from './components/ScoreBoard'
 import { useLinera } from './hooks/useLinera'
 import { validateLoginInput, authenticateUser, saveUserSession, loadSavedSession, clearUserSession } from './utils/authUtils'
 import { resetLeaderboardData } from './utils/adminUtils'
@@ -21,9 +20,6 @@ const candyColors = [
     yellowCandy,
     greenCandy
 ]
-
-
-const ADMIN_USERNAMES = ['admin', 'moderator', 'chaincrush_admin']
 
 const App = () => {
     const [currentColorArrangement, setCurrentColorArrangement] = useState([])
@@ -49,7 +45,6 @@ const App = () => {
     const { 
         isConnected, 
         isLoading, 
-        // userStats, //disabled till integration
         leaderboard, 
         submitScore, 
         startGame: startBlockchainGame, 
@@ -61,10 +56,9 @@ const App = () => {
         applicationId
     } = useLinera()
 
-    // Replace the displayLeaderboard line with:
     const displayLeaderboard = useMemo(() => {
-        return getDisplayLeaderboard(leaderboard);
-    }, [leaderboard]);
+        return getDisplayLeaderboard(leaderboard, currentUser);
+    }, [leaderboard, currentUser]);
 
     // Replace the existing useEffect that checks for saved login
     useEffect(() => {
@@ -121,29 +115,9 @@ const App = () => {
     }, []);
 
     // Update user stats after game
-    const updateUserStats = useCallback((finalScore, gameTime, totalMoves) => {
-        if (!currentUser) return;
-
-        const updatedUser = {
-            ...currentUser,
-            gamesPlayed: currentUser.gamesPlayed + 1,
-            totalScore: currentUser.totalScore + finalScore,
-            bestScore: Math.max(currentUser.bestScore, finalScore),
-            lastPlayed: Date.now(),
-            // Add average calculations
-            averageMoves: Math.round(((currentUser.averageMoves || 0) * (currentUser.gamesPlayed || 0) + totalMoves) / (currentUser.gamesPlayed + 1)),
-            averageTime: Math.round(((currentUser.averageTime || 0) * (currentUser.gamesPlayed || 0) + gameTime) / (currentUser.gamesPlayed + 1)),
-            // Track last game stats
-            lastGameScore: finalScore,
-            lastGameMoves: totalMoves,
-            lastGameTime: gameTime
-        };
-
-        // Save to both current session and permanent user storage
-        localStorage.setItem('chainCrushUser', JSON.stringify(updatedUser));
-        localStorage.setItem(`chainCrushUser_${currentUser.username}`, JSON.stringify(updatedUser));
-        setCurrentUser(updatedUser);
-    }, [currentUser])
+    const updateUserStatsCallback = useCallback((finalScore, gameTime, totalMoves) => {
+        updateUserStats(currentUser, finalScore, gameTime, totalMoves, setCurrentUser);
+    }, [currentUser]);
 
     useEffect(() => {
         console.log('🔍 App.js received from useLinera:', { 
@@ -331,7 +305,7 @@ const App = () => {
         const gameTime = 60 - timeLeft;
         
         // Update user stats with detailed info
-        updateUserStats(scoreDisplay, gameTime, moves);
+        updateUserStatsCallback(scoreDisplay, gameTime, moves);
 
         if (isConnected && scoreDisplay > 0) {
             try {
@@ -356,7 +330,7 @@ const App = () => {
                 // Don't show error to user, game continues normally
             }
         }
-    }, [isConnected, scoreDisplay, timeLeft, moves, submitScore, endBlockchainGame, updateUserStats])
+    }, [isConnected, scoreDisplay, timeLeft, moves, submitScore, endBlockchainGame, updateUserStatsCallback])
 
     const startGame = useCallback(async () => {
         if (!isLoggedIn) {
@@ -417,52 +391,22 @@ const App = () => {
         setConnectionTimeout(true)
     }, [])
 
+    // Admin functions
     const resetLeaderboard = useCallback(() => {
         if (!isAdmin) return;
         
         if (window.confirm('Are you sure you want to reset the leaderboard? This will clear all user scores but keep accounts.')) {
-            // Reset all user scores
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('chainCrushUser_')) {
-                    try {
-                        const userData = JSON.parse(localStorage.getItem(key));
-                        if (userData) {
-                            userData.bestScore = 0;
-                            userData.totalScore = 0;
-                            userData.gamesPlayed = 0;
-                            userData.averageMoves = 0;
-                            userData.averageTime = 0;
-                            localStorage.setItem(key, JSON.stringify(userData));
-                        }
-                    } catch (error) {
-                        console.error('Error resetting user data:', error);
-                    }
-                }
-            });
-            
-            // Update current user if logged in
-            if (currentUser) {
-                const resetUser = {
-                    ...currentUser,
-                    bestScore: 0,
-                    totalScore: 0,
-                    gamesPlayed: 0,
-                    averageMoves: 0,
-                    averageTime: 0
-                };
-                setCurrentUser(resetUser);
-                localStorage.setItem('chainCrushUser', JSON.stringify(resetUser));
+            const success = resetLeaderboardData(currentUser, setCurrentUser);
+            if (success) {
+                alert('Leaderboard has been reset! All scores cleared but user accounts preserved.');
             }
-            
-            console.log('🔧 Admin: Leaderboard reset completed');
-            alert('Leaderboard has been reset! All scores cleared but user accounts preserved.');
         }
-    }, [isAdmin, currentUser])
+    }, [isAdmin, currentUser]);
 
     const toggleAdminPanel = useCallback(() => {
-        if (!isAdmin) return
-        setShowAdminPanel(prev => !prev)
-    }, [isAdmin])
+        if (!isAdmin) return;
+        setShowAdminPanel(prev => !prev);
+    }, [isAdmin]);
 
     // Timer effect
     useEffect(() => {
@@ -499,6 +443,12 @@ const App = () => {
         }, 100)
         return () => clearInterval(timer)
     }, [checkForColumnOfFour, checkForRowOfFour, checkForColumnOfThree, checkForRowOfThree, moveIntoSquareBelow, currentColorArrangement, gameStarted, gameOver])
+
+    // Add this useEffect after the existing useEffects to refresh leaderboard when currentUser changes
+    useEffect(() => {
+        // Force re-render of leaderboard when user stats change
+        console.log('👤 Current user updated, leaderboard will refresh');
+    }, [currentUser]);
 
     return (
         <div className="app">
@@ -718,7 +668,6 @@ const App = () => {
                         )}
                     </div>
                     
-                    <ScoreBoard score={scoreDisplay}/>
                     
                     <div className="game-controls">
                         {!gameStarted && !gameOver && (
@@ -797,8 +746,8 @@ const App = () => {
                             ) : (
                                 <>
                                     <span className="rank">#{index + 1}</span>
-                                    <span className="score">🪙 {entry.tokens || entry.score}</span>
-                                    <span className="moves">🎮 {entry.moves}m</span>
+                                    <span className="score">🏆 {entry.totalScore}</span>
+                                    <span className="games">🎮 {entry.gamesPlayed}g</span>
                                     <span className="player">👤 {entry.playerId}</span>
                                     {index === 0 && <span className="crown">👑</span>}
                                 </>
@@ -858,3 +807,7 @@ const App = () => {
 }
 
 export default App
+
+
+
+
