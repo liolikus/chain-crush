@@ -58,6 +58,12 @@ const App = () => {
     const [moves, setMoves] = useState(0)
     const [connectionTimeout, setConnectionTimeout] = useState(false)
     const [timeoutCountdown, setTimeoutCountdown] = useState(60)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const [showLogin, setShowLogin] = useState(false)
+    const [username, setUsername] = useState('')
+    const [password, setPassword] = useState('')
+    const [loginError, setLoginError] = useState('')
+    const [currentUser, setCurrentUser] = useState(null)
     
     // Linera blockchain integration
     const { 
@@ -77,6 +83,122 @@ const App = () => {
 
     // Use leaderboard data or fallback to default
     const displayLeaderboard = leaderboard && leaderboard.length > 0 ? leaderboard : defaultLeaderboard
+
+    // Replace the existing useEffect that checks for saved login
+    useEffect(() => {
+        const savedUser = localStorage.getItem('chainCrushUser')
+        const savedCredentials = localStorage.getItem('chainCrushCredentials')
+        
+        if (savedUser) {
+            const userData = JSON.parse(savedUser)
+            setCurrentUser(userData)
+            setIsLoggedIn(true)
+        }
+        
+        if (savedCredentials) {
+            const credentials = JSON.parse(savedCredentials)
+            setUsername(credentials.username)
+            setPassword(credentials.password)
+        }
+    }, [])
+
+    // Login function
+    const handleLogin = useCallback((e) => {
+        e.preventDefault()
+        setLoginError('')
+
+        if (!username.trim() || !password.trim()) {
+            setLoginError('Please enter both username and password')
+            return
+        }
+
+        if (username.length < 3) {
+            setLoginError('Username must be at least 3 characters long')
+            return
+        }
+
+        if (password.length < 4) {
+            setLoginError('Password must be at least 4 characters long')
+            return
+        }
+
+
+
+
+
+
+
+        // Check if user already exists, if not create new user
+        const existingUser = localStorage.getItem(`chainCrushUser_${username.trim()}`)
+        let userData
+
+        if (existingUser) {
+            userData = JSON.parse(existingUser)
+            // Verify password
+            if (userData.password !== password) {
+                setLoginError('Incorrect password for this username')
+                return
+            }
+            // Update last login time
+            userData.lastLogin = Date.now()
+        } else {
+            // Create new user
+            userData = {
+                username: username.trim(),
+                password: password,
+                createdAt: Date.now(),
+                lastLogin: Date.now(),
+                gamesPlayed: 0,
+                totalScore: 0,
+                bestScore: 0
+            }
+        }
+
+        // Save user data and credentials
+        localStorage.setItem(`chainCrushUser_${username.trim()}`, JSON.stringify(userData))
+        localStorage.setItem('chainCrushUser', JSON.stringify(userData))
+        localStorage.setItem('chainCrushCredentials', JSON.stringify({
+            username: username.trim(),
+            password: password
+        }))
+
+        setCurrentUser(userData)
+        setIsLoggedIn(true)
+        setShowLogin(false)
+
+
+    }, [username, password])
+
+    // Logout function
+    const handleLogout = useCallback(() => {
+        
+        localStorage.removeItem('chainCrushUser') 
+        setCurrentUser(null)
+        setIsLoggedIn(false)
+        setGameStarted(false)
+        setGameOver(false)
+        setScoreDisplay(0)
+        setMoves(0)
+        setTimeLeft(60)
+    }, [])
+
+    // Update user stats after game
+    const updateUserStats = useCallback((finalScore) => {
+        if (!currentUser) return
+
+        const updatedUser = {
+            ...currentUser,
+            gamesPlayed: currentUser.gamesPlayed + 1,
+            totalScore: currentUser.totalScore + finalScore,
+            bestScore: Math.max(currentUser.bestScore, finalScore),
+            lastPlayed: Date.now()
+        }
+
+        // Save to both current session and permanent user storage
+        localStorage.setItem('chainCrushUser', JSON.stringify(updatedUser))
+        localStorage.setItem(`chainCrushUser_${currentUser.username}`, JSON.stringify(updatedUser))
+        setCurrentUser(updatedUser)
+    }, [currentUser])
 
     useEffect(() => {
         console.log('🔍 App.js received from useLinera:', { 
@@ -261,6 +383,9 @@ const App = () => {
     }, [])
 
     const handleGameOver = useCallback(async () => {
+        // Add this line at the very beginning
+        updateUserStats(scoreDisplay)
+
         if (isConnected && scoreDisplay > 0) {
             try {
                 const gameTime = 60 - timeLeft;
@@ -285,9 +410,14 @@ const App = () => {
                 // Don't show error to user, game continues normally
             }
         }
-    }, [isConnected, scoreDisplay, timeLeft, moves, submitScore, endBlockchainGame])
+    }, [isConnected, scoreDisplay, timeLeft, moves, submitScore, endBlockchainGame, updateUserStats])
 
     const startGame = useCallback(async () => {
+        if (!isLoggedIn) {
+            setShowLogin(true)
+            return
+        }
+
         try {
             if (isConnected) {
                 console.log('Starting game on Linera blockchain...')
@@ -303,7 +433,6 @@ const App = () => {
             createBoard()
         } catch (error) {
             console.error('Failed to start game on blockchain:', error)
-            // Continue with local game even if blockchain fails
             setGameStarted(true)
             setGameOver(false)
             setTimeLeft(60)
@@ -311,7 +440,7 @@ const App = () => {
             setMoves(0)
             createBoard()
         }
-    }, [isConnected, startBlockchainGame, createBoard])
+    }, [isLoggedIn, isConnected, startBlockchainGame, createBoard])
 
     const resetGame = useCallback(async () => {
         try {
@@ -411,6 +540,87 @@ const App = () => {
             </div>
         )}
         
+        {/* Login Modal */}
+        {showLogin && (
+            <div className="login-overlay">
+                <div className="login-modal">
+                    <div className="login-header">
+                        <h2>🎮 Login to Chain Crush</h2>
+                        <button 
+                            className="close-btn"
+                            onClick={() => setShowLogin(false)}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                    <form onSubmit={handleLogin} className="login-form">
+                        <div className="form-group">
+                            <label htmlFor="username">👤 Username</label>
+                            <input
+                                type="text"
+                                id="username"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Enter your username"
+                                autoComplete="username"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="password">🔒 Password</label>
+                            <input
+                                type="password"
+                                id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Enter your password"
+                                autoComplete="current-password"
+                            />
+                        </div>
+                        <div className="form-group checkbox-group">
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={true}
+                                    readOnly
+                                />
+                                <span className="checkmark"></span>
+                                🔒 Remember my login (always enabled)
+                            </label>
+                        </div>
+                        {loginError && (
+                            <div className="login-error">
+                                ⚠️ {loginError}
+                            </div>
+                        )}
+                        <button type="submit" className="login-btn">
+                            🚀 Login & Play
+                        </button>
+                        <p className="login-note">
+                            <small>No registration required - just create a username and password!</small>
+                            <small>Your login and stats will be remembered automatically</small>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        )}
+
+        {/* User info bar */}
+        {isLoggedIn && (
+            <div className="user-bar">
+                <div className="user-info">
+                    <span className="welcome">👋 Welcome, <strong>{currentUser?.username}</strong>!</span>
+                    <div className="user-stats">
+                        <span>🎮 Games: {currentUser?.gamesPlayed || 0}</span>
+                        <span>🏆 Best: {currentUser?.bestScore || 0}</span>
+                        <span>📊 Total: {currentUser?.totalScore || 0}</span>
+                    </div>
+                </div>
+                <button onClick={handleLogout} className="logout-btn">
+                    🚪 Logout
+                </button>
+            </div>
+        )}
+
         {/* Top row layout: blockchain-info left, game center, leaderboard right */}
         <div className="top-layout">
             {/* Blockchain info - top left */}
@@ -484,7 +694,10 @@ const App = () => {
                                 className="start-btn" 
                                 disabled={isLoading && !connectionTimeout}
                             >
-                                {isConnected ? '⛓️ Start ⛓️ microchain Game ' : '🎮 Start Local Game'}
+                                {isLoggedIn 
+                                    ? (isConnected ? '⛓️ Start Microchain Game' : '🎮 Start Local Game')
+                                    : '🔐 Login to Play'
+                                }
                             </button>
                         )}
                         
