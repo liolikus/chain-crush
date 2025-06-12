@@ -1,7 +1,7 @@
 
 # Chain Crush ⛓️⛓️⛓️
 
-A blockchain-powered Candy Crush styled game built with React and Linera protocol technology.
+A match-3 styled P2E game integrated with Linera microchains.
 
 ## Features
 
