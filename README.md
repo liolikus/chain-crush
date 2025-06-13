@@ -1,21 +1,22 @@
 
 # Chain Crush ⛓️⛓️⛓️
 
-A match-3 styled P2E game integrated with Linera microchains.
+A blockchain-powered Candy Crush-style game built with React and Linera Protocol.
 
 ## Features
 
-- 🎮 Classic match-3 gameplay
-- ⛓️ Integration with Linera
-- 🎉 Score-to-token conversion
-- 🏆 Decentralized leaderboard
-- 💾 Offline mode fallback
+- **🎮 Classic Match-3 Gameplay**: Drag and drop to create matches
+- **⛓️ Blockchain Integration**: Scores are converted to test-tokens on Linera Microchains
+- **🏆 Real-time Leaderboard**: Compete with other players
+- **👤 User Authentication**: Simple login system with persistent sessions
+- **📱 Responsive Design**: Works on desktop and mobile devices
+- **💾 Offline Mode**: Play even when blockchain is unavailable
+- **🔧 Admin Panel**: Administrative controls for game management
 
 ## Blockchain Integration
 
 This game integrates with the Linera protocol to:
-- Convert game scores to tokens
-- Maintain a decentralized leaderboard
+- Convert game scores to testnet tokens
 - Provide verifiable game sessions
 
 ## Game Rules
@@ -29,7 +30,7 @@ This game integrates with the Linera protocol to:
 
 ### 🔐 Authentication & User Management
 - [ ] **User Authentication System**
-  - [ ] Login with wallet connection
+  - [ ] Login with username
   - [ ] Discord OAuth integration
   - [ ] User preferences and settings
 
@@ -157,13 +158,32 @@ REACT_APP_APPLICATION_ID=your_application_id_here
 chain-crush/
 ├── src/
 │   ├── components/          # React components
-│   ├── hooks/              # Custom React hooks
-│   ├── services/           # Linera services
-│   ├── images/             # Game assets
-│   └── App.js              # Main application
-├── contract/               # Linera smart contract
-│   ├── src/               # Rust contract code
-└── public/                # Static assets
+│   │   ├── GameBoard.js     # Game board component
+│   │   ├── GameControls.js  # Game control buttons
+│   │   ├── LoginModal.js    # User authentication
+│   │   ├── UserBar.js       # User information display
+│   │   ├── Leaderboard.js   # Score leaderboard
+│   │   ├── BlockchainInfo.js # Blockchain status
+│   │   └── LoadingScreen.js # Loading screen
+│   ├── hooks/               # Custom React hooks
+│   │   ├── useLinera.js     # Blockchain integration
+│   │   ├── useAuth.js       # Authentication logic
+│   │   ├── useGameLogic.js  # Game mechanics
+│   │   └── useGameTimer.js  # Timer functionality
+│   ├── utils/               # Utility functions
+│   │   ├── authUtils.js     # Authentication helpers
+│   │   ├── adminUtils.js    # Admin functionality
+│   │   └── leaderboardUtils.js # Leaderboard management
+│   ├── services/            # External services
+│   │   └── lineraService.js # Linera blockchain service
+│   ├── constants/           # Game configuration
+│   │   └── gameConstants.js # Game settings and constants
+│   ├── images/              # Game assets
+│   └── App.js               # Main application
+├── contract/                # Linera smart contract (Rust)
+│   ├── src/                 # Contract source code
+│   └── Cargo.toml           # Rust dependencies
+└── public/                  # Static assets
 ```
 
 ## Acknowledgments
@@ -174,7 +194,9 @@ chain-crush/
 
 ---
 
-**Play Chain Crush and earn tokens while having fun!** 🎮🎉
+**🎮 Start playing Chain Crush and earn tokens while having fun! 🎉**
+
+*Built with ❤️ using React and Linera Protocol*
 
 
 
