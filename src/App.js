@@ -3,6 +3,7 @@ import { useLinera } from './hooks/useLinera';
 import { useAuth } from './hooks/useAuth';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useGameTimer } from './hooks/useGameTimer';
+import { useTournament } from './hooks/useTournament';
 import { resetLeaderboardData } from './utils/adminUtils';
 import { getDisplayLeaderboard, updateUserStats } from './utils/leaderboardUtils';
 
@@ -14,6 +15,9 @@ import UserBar from './components/UserBar';
 import Leaderboard from './components/Leaderboard';
 import BlockchainInfo from './components/BlockchainInfo';
 import LoadingScreen from './components/LoadingScreen';
+import TournamentModal from './components/TournamentModal';
+import TournamentInfo from './components/TournamentInfo';
+import TournamentManagement from './components/TournamentManagement';
 
 const App = () => {
   const [gameOver, setGameOver] = useState(false);
@@ -21,6 +25,8 @@ const App = () => {
   const [connectionTimeout, setConnectionTimeout] = useState(false);
   const [timeoutCountdown, setTimeoutCountdown] = useState(60);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [showTournamentNotification, setShowTournamentNotification] = useState(false);
 
   // Custom hooks
   const {
@@ -70,6 +76,15 @@ const App = () => {
     applicationId,
   } = useLinera();
 
+  const {
+    activeTournament,
+    // upcomingTournament,
+    tournamentStatusChanged,
+    joinTournament,
+    submitTournamentScore,
+    createNewTournament,
+  } = useTournament(currentUser);
+
   const [handleGameOverCallback, setHandleGameOverCallback] = useState(null);
 
   const { timeLeft, formatTime, resetTimer } = useGameTimer(
@@ -78,11 +93,24 @@ const App = () => {
     handleGameOverCallback
   );
 
+  // Tournament notification effect
+  useEffect(() => {
+    if (tournamentStatusChanged) {
+      setShowTournamentNotification(true);
+      setTimeout(() => setShowTournamentNotification(false), 5000);
+    }
+  }, [tournamentStatusChanged]);
+
   const handleGameOver = useCallback(async () => {
     setGameOver(true);
     const gameTime = 60 - timeLeft;
 
     updateUserStats(currentUser, scoreDisplay, gameTime, moves, setCurrentUser);
+
+    // Submit to tournament if active
+    if (activeTournament && currentUser?.username) {
+      submitTournamentScore(currentUser.username, scoreDisplay, gameTime, moves);
+    }
 
     if (isConnected && scoreDisplay > 0) {
       try {
@@ -101,6 +129,8 @@ const App = () => {
     currentUser,
     setCurrentUser,
     timeLeft,
+    activeTournament,
+    submitTournamentScore,
   ]);
 
   // Update the callback when handleGameOver changes
@@ -109,8 +139,19 @@ const App = () => {
   }, [handleGameOver]);
 
   const displayLeaderboard = useMemo(() => {
+    // If there's an active tournament, show tournament leaderboard
+    if (activeTournament && activeTournament.leaderboard) {
+      return activeTournament.leaderboard.map((entry) => ({
+        username: entry.username,
+        highScore: entry.score,
+        bestTime: entry.gameTime,
+        totalGames: 1,
+        averageScore: entry.score,
+        lastPlayed: entry.timestamp,
+      }));
+    }
     return getDisplayLeaderboard(leaderboard, currentUser);
-  }, [leaderboard, currentUser]);
+  }, [leaderboard, currentUser, activeTournament]);
 
   // Connection timeout handling
   useEffect(() => {
@@ -187,6 +228,11 @@ const App = () => {
         await startBlockchainGame();
       }
 
+      // Auto-join active tournament
+      if (activeTournament && currentUser?.username) {
+        joinTournament(activeTournament.id, currentUser.username);
+      }
+
       setGameStarted(true);
       setGameOver(false);
       resetTimer();
@@ -198,7 +244,17 @@ const App = () => {
       resetTimer();
       resetGameLogic();
     }
-  }, [isLoggedIn, isConnected, startBlockchainGame, resetTimer, resetGameLogic, setShowLogin]);
+  }, [
+    isLoggedIn,
+    isConnected,
+    startBlockchainGame,
+    resetTimer,
+    resetGameLogic,
+    setShowLogin,
+    activeTournament,
+    currentUser,
+    joinTournament,
+  ]);
 
   const resetGame = useCallback(async () => {
     try {
@@ -230,11 +286,17 @@ const App = () => {
       }
     }
   }, [isAdmin, currentUser, setCurrentUser]);
-
   const toggleAdminPanel = useCallback(() => {
     if (!isAdmin) return;
     setShowAdminPanel((prev) => !prev);
   }, [isAdmin]);
+
+  const handleCreateTournament = useCallback(
+    (tournamentData) => {
+      return createNewTournament(tournamentData);
+    },
+    [createNewTournament]
+  );
 
   // Enhanced drag handlers that check game state
   const handleDragStart = useCallback(
@@ -277,6 +339,19 @@ const App = () => {
         </div>
       )}
 
+      {/* Tournament Status Notification */}
+      {showTournamentNotification && (
+        <div className="tournament-notification">
+          <div className="notification-content">
+            {activeTournament ? (
+              <span>🏆 Tournament "{activeTournament.title}" is now LIVE!</span>
+            ) : (
+              <span>🏁 Tournament has ended!</span>
+            )}
+          </div>
+        </div>
+      )}
+
       <LoginModal
         showLogin={showLogin}
         username={username}
@@ -288,12 +363,21 @@ const App = () => {
         onClose={() => setShowLogin(false)}
       />
 
+      <TournamentModal
+        showModal={showTournamentModal}
+        onClose={() => setShowTournamentModal(false)}
+        onCreateTournament={handleCreateTournament}
+      />
+
       <UserBar
         isLoggedIn={isLoggedIn}
         currentUser={currentUser}
         isAdmin={isAdmin}
         onLogout={handleLogout}
       />
+
+      {/* Tournament Info */}
+      <TournamentInfo />
 
       {/* Admin Controls */}
       {isAdmin && (
@@ -314,6 +398,9 @@ const App = () => {
                 <button onClick={resetLeaderboard} className="admin-btn danger">
                   🗑️ Reset Leaderboard
                 </button>
+                <button onClick={() => setShowTournamentModal(true)} className="admin-btn primary">
+                  🏆 Create Tournament
+                </button>
                 <div className="admin-info">
                   <p>
                     <small>🔧 Admin Mode Active</small>
@@ -321,7 +408,20 @@ const App = () => {
                   <p>
                     <small>Chain: {isConnected ? 'Connected' : 'Offline'}</small>
                   </p>
+                  {activeTournament && (
+                    <p>
+                      <small>🏆 Active: {activeTournament.title}</small>
+                    </p>
+                  )}
                 </div>
+              </div>
+
+              {/* Tournament Management Section */}
+              <div className="admin-section">
+                <TournamentManagement
+                  currentUser={currentUser}
+                  onCreateTournament={() => setShowTournamentModal(true)}
+                />
               </div>
             </div>
           )}
@@ -360,6 +460,7 @@ const App = () => {
             onStartGame={startGame}
             onResetGame={resetGame}
             formatTime={formatTime}
+            activeTournament={activeTournament}
           />
 
           <div className="blockchain-status">
@@ -387,6 +488,7 @@ const App = () => {
           isConnected={isConnected}
           isAdmin={isAdmin}
           onResetLeaderboard={resetLeaderboard}
+          activeTournament={activeTournament}
         />
       </div>
 
@@ -404,6 +506,32 @@ const App = () => {
             <p>
               Game Time: <strong>{60 - timeLeft}s</strong>
             </p>
+
+            {/* Tournament Results */}
+            {activeTournament && (
+              <div className="tournament-results">
+                <h3>🏆 Tournament: {activeTournament.title}</h3>
+                <p>
+                  Your tournament score: <strong>{scoreDisplay}</strong>
+                </p>
+                {activeTournament.leaderboard && activeTournament.leaderboard.length > 0 && (
+                  <div className="tournament-ranking">
+                    <p>
+                      Current Rank: #
+                      {activeTournament.leaderboard.findIndex(
+                        (entry) => entry.username === currentUser?.username
+                      ) + 1}{' '}
+                      of {activeTournament.leaderboard.length}
+                    </p>
+                    <p>
+                      Leader: {activeTournament.leaderboard[0].username}(
+                      {activeTournament.leaderboard[0].score} pts)
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {isConnected && scoreDisplay > 0 && (
               <div className="token-conversion">
                 <p className="blockchain-success">

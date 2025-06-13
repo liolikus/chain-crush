@@ -13,70 +13,76 @@ const GameControls = ({
   onStartGame,
   onResetGame,
   formatTime,
+  activeTournament,
 }) => {
+  const isTournamentActive = !!activeTournament;
+
   return (
-    <div className="game-header">
-      <div className="timer">
-        <h3>⏰ Time: {formatTime(timeLeft)}</h3>
-        <p>🎯 Moves: {moves}</p>
-        {isConnected && gameStarted && (
-          <p className="blockchain-indicator">⛓️ Score will be recorded on microchain!</p>
-        )}
-        {(!isConnected || connectionTimeout) && gameStarted && (
-          <p className="offline-indicator">💾 Playing in offline mode</p>
+    <div className={`game-controls ${isTournamentActive ? 'tournament-active' : ''}`}>
+      <div className="score-section">
+        <div className="score-display">
+          <span className="score-label">Score</span>
+          <span className="score-value">{scoreDisplay}</span>
+        </div>
+        <div className="moves-display">
+          <span className="moves-label">Moves</span>
+          <span className="moves-value">{moves}</span>
+        </div>
+        <div className="timer-display">
+          <span className="timer-label">Time</span>
+          <span className={`timer-value ${timeLeft <= 10 && gameStarted ? 'warning' : ''}`}>
+            {formatTime(timeLeft)}
+          </span>
+        </div>
+      </div>
+
+      {isTournamentActive && (
+        <div className="tournament-status">
+          <div className="tournament-badge">
+            <span className="tournament-icon">🏆</span>
+            <div className="tournament-details">
+              <div className="tournament-name">{activeTournament.title}</div>
+              <div className="tournament-participants">
+                {activeTournament.participants?.length || 0} players
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="control-buttons">
+        {!gameStarted ? (
+          <button
+            onClick={onStartGame}
+            className={`start-btn ${!isLoggedIn ? 'login-required' : ''}`}
+            disabled={isLoading && !connectionTimeout}
+          >
+            {!isLoggedIn
+              ? '🔐 Login to Play'
+              : isTournamentActive
+              ? '🏆 Join Tournament'
+              : '🎮 Start Game'}
+          </button>
+        ) : (
+          <button onClick={onResetGame} className="reset-btn">
+            🔄 Reset Game
+          </button>
         )}
       </div>
 
-      <div className="game-controls">
-        {!gameStarted && !gameOver && (
-          <button
-            onClick={onStartGame}
-            className="start-btn"
-            disabled={isLoading && !connectionTimeout}
-          >
-            {isLoggedIn
-              ? isConnected
-                ? '⛓️ Start Microchain Game'
-                : '🎮 Start Local Game'
-              : '🔐 Login to Play'}
-          </button>
-        )}
-
+      <div className="game-status">
         {gameOver && (
-          <div className="game-over">
-            <h2>🎉 Game Over!</h2>
-            <p>
-              Final Score: <strong>{scoreDisplay}</strong>
-            </p>
-            <p>
-              Total Moves: <strong>{moves}</strong>
-            </p>
-            <p>
-              Game Time: <strong>{60 - timeLeft}s</strong>
-            </p>
-            {isConnected && scoreDisplay > 0 && (
-              <div className="token-conversion">
-                <p className="blockchain-success">
-                  ✅ {Math.floor(scoreDisplay / 10)} tokens minted to your account!
-                </p>
-                <p>
-                  <small>Conversion rate: 10 points = 1 token</small>
-                </p>
-              </div>
-            )}
-            {(!isConnected || connectionTimeout) && (
-              <p className="offline-notice">💾 Score saved locally (offline mode)</p>
-            )}
-            <button onClick={onResetGame} className="restart-btn">
-              🔄 Play Again
-            </button>
+          <div className="game-over-status">
+            <span className="status-icon">🎉</span>
+            <span>Game Complete!</span>
           </div>
         )}
-
         {gameStarted && !gameOver && (
-          <button onClick={onResetGame} className="reset-btn">
-            🛑 End Game
-          </button>
+          <div className="game-active-status">
+            <span className="status-icon">🎯</span>
+            <span>Game Active</span>
+            {isTournamentActive && <span className="tournament-indicator">• Tournament</span>}
+          </div>
         )}
       </div>
     </div>

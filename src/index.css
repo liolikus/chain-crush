@@ -1,3 +1,5 @@
+@import './styles/tournament.css';
+
 body {
   background: linear-gradient(-45deg, #fd0000, #292828, #292828, #ff0000);
   background-size: 400% 400%;
