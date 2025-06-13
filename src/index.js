@@ -8,5 +8,3 @@ const root = createRoot(container);
 
 // Disable StrictMode to prevent double initialization
 root.render(<App />);
-
-

@@ -29,7 +29,7 @@ body {
   position: relative;
 }
 
-/* Linera Logo - bottom left */
+/* Linera Logo */
 .linera-logo {
   position: fixed;
   bottom: 20px;
@@ -48,7 +48,7 @@ body {
   opacity: 1;
 }
 
-/* New top layout for three-column design */
+/* Layout */
 .top-layout {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -66,6 +66,7 @@ body {
   justify-self: center;
 }
 
+/* Game Board */
 .game {
   width: 560px;
   height: 560px;
@@ -77,12 +78,12 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-
 .game img {
   width: 70px;
   height: 70px;
 }
 
+/* Loading Screen */
 .loading {
   position: fixed;
   top: 0;
@@ -114,15 +115,19 @@ body {
   width: 50px;
   height: 50px;
   border: 4px solid #333;
-  border-top: 4px solid #4CAF50;
+  border-top: 4px solid #4caf50;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-content p {
@@ -156,6 +161,7 @@ body {
   transform: translateY(-1px);
 }
 
+/* Game Controls */
 .game-header {
   width: 560px;
   display: flex;
@@ -167,6 +173,100 @@ body {
   border-radius: 8px;
 }
 
+.timer {
+  flex: 1;
+  order: 1;
+}
+
+.timer h3,
+.timer p {
+  margin: 0 0 5px 0;
+}
+
+.game-controls {
+  flex: 1;
+  text-align: center;
+  order: 2;
+}
+
+.blockchain-indicator {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.offline-indicator {
+  color: #ff9800;
+  font-weight: bold;
+}
+
+/* Buttons */
+.start-btn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: 3px solid #66bb6a;
+  border-radius: 12px;
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  min-width: 200px;
+}
+
+.start-btn:hover {
+  background: linear-gradient(135deg, #66bb6a, #4caf50);
+  border-color: #4caf50;
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+  transform: translateY(-2px);
+}
+
+.start-btn:disabled {
+  background: linear-gradient(135deg, #666, #555);
+  border-color: #777;
+  color: #ccc;
+  cursor: not-allowed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: none;
+}
+
+.restart-btn {
+  background: linear-gradient(135deg, #2196f3, #1976d2);
+  color: white;
+  border: 2px solid #42a5f5;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+}
+
+.restart-btn:hover {
+  background: linear-gradient(135deg, #42a5f5, #2196f3);
+  transform: translateY(-1px);
+}
+
+.reset-btn {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  border: 2px solid #ef5350;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+  background: linear-gradient(135deg, #ef5350, #f44336);
+  transform: translateY(-1px);
+}
+
+/* Blockchain Status */
 .blockchain-status {
   width: 560px;
   margin-top: 15px;
@@ -189,7 +289,7 @@ body {
 }
 
 .status-dot.connected {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
 }
 
@@ -198,120 +298,7 @@ body {
   box-shadow: 0 0 10px rgba(244, 67, 54, 0.5);
 }
 
-.timer {
-  flex: 1;
-  order: 1;
-}
-
-.timer h3 {
-  margin: 0 0 5px 0;
-}
-
-.timer p {
-  margin: 0;
-}
-
-.blockchain-indicator {
-  color: #4CAF50;
-  font-weight: bold;
-}
-
-.offline-indicator {
-  color: #ff9800;
-  font-weight: bold;
-}
-
-.game-controls {
-  flex: 1;
-  text-align: center;
-  order: 2;
-}
-
-.score-board {
-  flex: 1;
-  text-align: right;
-  order: 3;
-}
-
-.start-btn {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
-  color: white;
-  border: 3px solid #66BB6A;
-  border-radius: 12px;
-  padding: 15px 30px;
-  font-size: 18px;
-  font-weight: bold;
-  font-family: 'Arial', sans-serif;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  min-width: 200px;
-}
-
-.start-btn:hover {
-  background: linear-gradient(135deg, #66BB6A, #4CAF50);
-  border-color: #4CAF50;
-  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
-  transform: translateY(-2px);
-}
-
-.start-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(76, 175, 80, 0.4);
-}
-
-.start-btn:disabled {
-  background: linear-gradient(135deg, #666, #555);
-  border-color: #777;
-  color: #ccc;
-  cursor: not-allowed;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transform: none;
-}
-
-.start-btn:disabled:hover {
-  background: linear-gradient(135deg, #666, #555);
-  border-color: #777;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transform: none;
-}
-
-.restart-btn {
-  background: linear-gradient(135deg, #2196F3, #1976D2);
-  color: white;
-  border: 2px solid #42A5F5;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 15px;
-}
-
-.restart-btn:hover {
-  background: linear-gradient(135deg, #42A5F5, #2196F3);
-  transform: translateY(-1px);
-}
-
-.reset-btn {
-  background: linear-gradient(135deg, #f44336, #d32f2f);
-  color: white;
-  border: 2px solid #ef5350;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.reset-btn:hover {
-  background: linear-gradient(135deg, #ef5350, #f44336);
-  transform: translateY(-1px);
-}
-
+/* Game Over */
 .game-over-overlay {
   position: fixed;
   top: 0;
@@ -349,36 +336,27 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideIn {
-  from { 
+  from {
     opacity: 0;
     transform: translateY(-50px) scale(0.9);
   }
-  to { 
+  to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
 
-/* Mobile responsive for popup */
-@media (max-width: 768px) {
-  .game-over-popup {
-    min-width: 280px;
-    padding: 30px 20px;
-    margin: 20px;
-  }
-  
-  .game-over-popup h2 {
-    font-size: 24px;
-  }
-}
-
 .blockchain-success {
-  color: #4CAF50;
+  color: #4caf50;
   font-weight: bold;
 }
 
@@ -387,7 +365,7 @@ body {
   font-weight: bold;
 }
 
-/* Blockchain info styles - positioned top left */
+/* Blockchain Info */
 .blockchain-info {
   justify-self: start;
   max-width: 350px;
@@ -402,7 +380,7 @@ body {
   font-size: 16px;
   font-weight: bold;
   text-align: center;
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .blockchain-details,
@@ -420,12 +398,7 @@ body {
   word-break: break-all;
 }
 
-/* Hide user stats */
-.user-stats {
-  display: none;
-}
-
-/* Leaderboard styles - positioned top right */
+/* Leaderboard */
 .leaderboard {
   max-width: 350px;
   padding: 20px;
@@ -457,12 +430,8 @@ body {
   position: relative;
 }
 
-.leaderboard-entry .games {
-  text-align: center;
-}
-
 .leaderboard-entry.first-place {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, #ffd700, #ffa500);
   color: #000;
   font-weight: bold;
 }
@@ -472,11 +441,7 @@ body {
   min-width: 25px;
 }
 
-.leaderboard-entry .score {
-  text-align: left;
-}
-
-.leaderboard-entry .moves {
+.leaderboard-entry .games {
   text-align: center;
 }
 
@@ -496,22 +461,13 @@ body {
   font-size: 16px;
 }
 
-.mock-notice {
-  text-align: center;
-  margin: 10px 0 0 0;
-  color: #ccc;
-  font-style: italic;
-  font-size: 12px;
-}
-
-/* Add these styles for empty leaderboard */
 .leaderboard-entry.empty-entry {
   grid-template-columns: 1fr;
   text-align: center;
   padding: 20px 12px;
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
-  border: 2px dashed #4CAF50;
-  color: #4CAF50;
+  border: 2px dashed #4caf50;
+  color: #4caf50;
 }
 
 .empty-message {
@@ -526,132 +482,12 @@ body {
 .local-notice {
   text-align: center;
   margin: 10px 0 0 0;
-  color: #4CAF50;
+  color: #4caf50;
   font-style: italic;
   font-size: 12px;
 }
 
-/* Error handling */
-.error-banner {
-  width: 100%;
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 15px;
-  background-color: #cc3333;
-  border-radius: 8px;
-  color: white;
-  text-align: center;
-}
-
-.csp-help {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-  text-align: left;
-}
-
-.csp-help ol {
-  margin: 10px 0;
-  padding-left: 20px;
-}
-
-.csp-help code {
-  background-color: #444;
-  padding: 2px 4px;
-  border-radius: 2px;
-  font-family: monospace;
-  font-size: 12px;
-  word-break: break-all;
-}
-
-.retry-btn {
-  background: linear-gradient(135deg, #ff6b6b, #ff5252);
-  color: white;
-  border: 2px solid #ff8a80;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: all 0.3s ease;
-}
-
-.retry-btn:hover {
-  background: linear-gradient(135deg, #ff8a80, #ff6b6b);
-  transform: translateY(-1px);
-}
-
-/* Responsive design */
-@media (max-width: 1200px) {
-  .top-layout {
-    grid-template-columns: 1fr;
-
-    gap: 30px;
-    text-align: center;
-  }
-  
-  .blockchain-info,
-  .leaderboard {
-    justify-self: center;
-    max-width: 560px;
-  }
-  
-  .blockchain-info {
-    order: 1;
-  }
-  
-  .game-container {
-    order: 2;
-  }
-  
-  .leaderboard {
-    order: 3;
-  }
-}
-
-@media (max-width: 768px) {
-  .app {
-    padding: 15px;
-  }
-  
-  .game {
-    width: 280px;
-    height: 280px;
-  }
-  
-  .game img {
-    width: 35px;
-    height: 35px;
-  }
-  
-  .game-header {
-    width: 280px;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .blockchain-status {
-    width: 280px;
-  }
-  
-  .blockchain-info,
-  .leaderboard {
-    max-width: 280px;
-  }
-
-  /* Adjust logo size for mobile */
-  .linera-logo {
-    bottom: 10px;
-    left: 10px;
-  }
-  
-  .linera-logo img {
-    height: 30px;
-  }
-}
-
-/* Login Modal Styles */
+/* Login Modal */
 .login-overlay {
   position: fixed;
   top: 0;
@@ -670,7 +506,7 @@ body {
   background: linear-gradient(135deg, #222, #333);
   padding: 40px;
   border-radius: 16px;
-  border: 3px solid #4CAF50;
+  border: 3px solid #4caf50;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   min-width: 400px;
   max-width: 500px;
@@ -686,7 +522,7 @@ body {
 
 .login-header h2 {
   margin: 0;
-  color: #4CAF50;
+  color: #4caf50;
   font-size: 24px;
 }
 
@@ -736,7 +572,7 @@ body {
 
 .form-group input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
 }
 
@@ -755,9 +591,9 @@ body {
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #4CAF50, #45a049);
+  background: linear-gradient(135deg, #4caf50, #45a049);
   color: white;
-  border: 2px solid #66BB6A;
+  border: 2px solid #66bb6a;
   border-radius: 12px;
   padding: 15px 30px;
   font-size: 18px;
@@ -770,8 +606,8 @@ body {
 }
 
 .login-btn:hover {
-  background: linear-gradient(135deg, #66BB6A, #4CAF50);
-  border-color: #4CAF50;
+  background: linear-gradient(135deg, #66bb6a, #4caf50);
+  border-color: #4caf50;
   box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
   transform: translateY(-2px);
 }
@@ -783,7 +619,7 @@ body {
   font-style: italic;
 }
 
-/* User Bar Styles */
+/* User Bar */
 .user-bar {
   display: flex;
   justify-content: space-between;
@@ -792,7 +628,7 @@ body {
   padding: 15px 25px;
   border-radius: 12px;
   margin-bottom: 20px;
-  border: 2px solid #4CAF50;
+  border: 2px solid #4caf50;
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
 }
 
@@ -804,7 +640,7 @@ body {
 
 .welcome {
   font-size: 18px;
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 .user-stats {
@@ -840,8 +676,171 @@ body {
   box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
-/* Mobile responsive for login */
+/* Admin Controls */
+.admin-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+  border: 2px solid #ffb74d;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.admin-toggle:hover {
+  background: linear-gradient(135deg, #ffb74d, #ff9800);
+  transform: scale(1.1);
+}
+
+.admin-controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #222, #333);
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #ff9800;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  min-width: 250px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.admin-header h3 {
+  margin: 0;
+  color: #ff9800;
+  font-size: 18px;
+}
+
+.admin-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.admin-btn {
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+  color: white;
+  border: 2px solid #ef5350;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.admin-btn:hover {
+  background: linear-gradient(135deg, #ef5350, #f44336);
+  transform: translateY(-1px);
+}
+
+.admin-info {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: rgba(255, 107, 53, 0.1);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.admin-info p {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #ccc;
+}
+
+/* Error Handling */
+.error-banner {
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 15px;
+  background-color: #cc3333;
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .top-layout {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    text-align: center;
+  }
+
+  .blockchain-info,
+  .leaderboard {
+    justify-self: center;
+    max-width: 560px;
+  }
+
+  .blockchain-info {
+    order: 1;
+  }
+
+  .game-container {
+    order: 2;
+  }
+
+  .leaderboard {
+    order: 3;
+  }
+}
+
 @media (max-width: 768px) {
+  .app {
+    padding: 15px;
+  }
+
+  .game {
+    width: 280px;
+    height: 280px;
+  }
+
+  .game img {
+    width: 35px;
+    height: 35px;
+  }
+
+  .game-header {
+    width: 280px;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .blockchain-status {
+    width: 280px;
+  }
+
+  .blockchain-info,
+  .leaderboard {
+    max-width: 280px;
+  }
+
+  .linera-logo {
+    bottom: 10px;
+    left: 10px;
+  }
+
+  .linera-logo img {
+    height: 30px;
+  }
+
   .login-modal {
     min-width: 280px;
     max-width: 320px;
@@ -860,27 +859,20 @@ body {
     flex-wrap: wrap;
     gap: 10px;
   }
-}
 
+  .game-over-popup {
+    min-width: 280px;
+    padding: 30px 20px;
+    margin: 20px;
+  }
 
-/* Keep only the danger button styles and simplify admin-actions */
-.admin-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 15px; 
-  align-items: center; 
-}
+  .game-over-popup h2 {
+    font-size: 24px;
+  }
 
-.admin-info {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: rgba(255, 107, 53, 0.1);
-  border-radius: 6px;
-  text-align: center;
-}
-
-.admin-info p {
-  margin: 4px 0;
-  font-size: 12px;
-  color: #ccc;
+  .admin-controls {
+    right: 10px;
+    top: 10px;
+    min-width: 200px;
+  }
 }
