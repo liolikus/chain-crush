@@ -34,7 +34,7 @@ const LoginModal = ({
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">🔒 Password</label>
+            <label htmlFor="password">🔒 DO NOT USE REAL PASSWORD</label>
             <input
               type="password"
               id="password"
@@ -45,11 +45,11 @@ const LoginModal = ({
             />
           </div>
           <div className="form-group checkbox-group">
-            <label className="checkbox-label">
+            {/* <label className="checkbox-label">
               <input type="checkbox" checked={true} readOnly />
               <span className="checkmark"></span>
               🔒 Remember my login (always enabled)
-            </label>
+            </label> */}
           </div>
           {loginError && <div className="login-error">⚠️ {loginError}</div>}
           <button type="submit" className="login-btn">

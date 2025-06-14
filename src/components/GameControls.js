@@ -18,7 +18,8 @@ const GameControls = ({
     <div className="game-header">
       <div className="timer">
         <h3>⏰ Time: {formatTime(timeLeft)}</h3>
-        <p>🎯 Moves: {moves}</p>
+        <h3>🏆 Score: {scoreDisplay}</h3>
+        <p> Moves: {moves}</p>
         {isConnected && gameStarted && (
           <p className="blockchain-indicator">⛓️ Score will be recorded on microchain!</p>
         )}

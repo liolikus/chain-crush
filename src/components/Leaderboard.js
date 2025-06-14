@@ -1,16 +1,45 @@
 import React from 'react';
 
-const Leaderboard = ({ displayLeaderboard, isConnected, isAdmin, onResetLeaderboard }) => {
+const Leaderboard = ({
+  displayLeaderboard,
+  isConnected,
+  isAdmin,
+  onResetLeaderboard,
+  activeTournament = null,
+  tournamentLeaderboard = null,
+}) => {
+  // Determine which leaderboard to show
+  const currentLeaderboard =
+    activeTournament && tournamentLeaderboard ? tournamentLeaderboard : displayLeaderboard;
+
+  const leaderboardTitle = activeTournament
+    ? `🏆 ${activeTournament.name} Tournament`
+    : '🏆 Leaderboard';
+
   return (
-    <div className={`leaderboard ${isAdmin ? 'admin-mode' : ''}`}>
-      <h3>🏆 {isConnected ? 'Microchain' : 'Local'} Leaderboard</h3>
+    <div
+      className={`leaderboard ${isAdmin ? 'admin-mode' : ''} ${
+        activeTournament ? 'tournament-mode' : ''
+      }`}
+    >
+      <h3>{leaderboardTitle}</h3>
+
+      {activeTournament && (
+        <div className="tournament-info">
+          <span className="tournament-status">🔥 LIVE TOURNAMENT</span>
+          <span className="tournament-time">
+            Ends: {new Date(activeTournament.endDate).toLocaleTimeString()}
+          </span>
+        </div>
+      )}
+
       <div className="leaderboard-list">
-        {displayLeaderboard.slice(0, 5).map((entry, index) => (
+        {currentLeaderboard.slice(0, 5).map((entry, index) => (
           <div
             key={index}
             className={`leaderboard-entry ${index === 0 && !entry.isEmpty ? 'first-place' : ''} ${
               entry.isEmpty ? 'empty-entry' : ''
-            }`}
+            } ${activeTournament ? 'tournament-entry' : ''}`}
           >
             {entry.isEmpty ? (
               <span className="empty-message">

@@ -420,14 +420,13 @@ body {
 }
 
 .leaderboard-entry {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  gap: 10px;
+  display: flex;
   align-items: center;
-  padding: 8px 12px;
-  background-color: #333;
-  border-radius: 6px;
-  position: relative;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  flex-wrap: wrap;
 }
 
 .leaderboard-entry.first-place {
@@ -446,12 +445,13 @@ body {
 }
 
 .leaderboard-entry .player {
-  text-align: right;
-  opacity: 0.8;
-  max-width: 60px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  text-overflow: unset;
+  overflow: visible;
 }
 
 .leaderboard-entry .crown {

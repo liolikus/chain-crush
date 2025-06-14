@@ -5,6 +5,8 @@ import { useGameLogic } from './hooks/useGameLogic';
 import { useGameTimer } from './hooks/useGameTimer';
 import { resetLeaderboardData } from './utils/adminUtils';
 import { getDisplayLeaderboard, updateUserStats } from './utils/leaderboardUtils';
+import { getTournamentStatus } from './utils/tournamentUtils';
+import TournamentManager from './components/TournamentManager';
 
 // Components
 import GameBoard from './components/GameBoard';
@@ -21,6 +23,8 @@ const App = () => {
   const [connectionTimeout, setConnectionTimeout] = useState(false);
   const [timeoutCountdown, setTimeoutCountdown] = useState(60);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [tournaments, setTournaments] = useState([]);
+  const [activeTournament, setActiveTournament] = useState(null);
 
   // Custom hooks
   const {
@@ -77,6 +81,19 @@ const App = () => {
     gameOver,
     handleGameOverCallback
   );
+
+  const handleCreateTournament = (tournament) => {
+    setTournaments((prev) => [...prev, tournament]);
+  };
+
+  const checkActiveTournament = useCallback(() => {
+    const active = tournaments.find((t) => getTournamentStatus(t) === 'active');
+    setActiveTournament(active || null);
+  }, [tournaments]);
+
+  useEffect(() => {
+    checkActiveTournament();
+  }, [checkActiveTournament]);
 
   const handleGameOver = useCallback(async () => {
     setGameOver(true);
@@ -303,7 +320,8 @@ const App = () => {
               ⚙️
             </button>
           ) : (
-            <div className="admin-controls">
+            <div className="admin-panel">
+              <h3>🔧 Admin Panel</h3>
               <div className="admin-header">
                 <h3>Admin Panel</h3>
                 <button onClick={toggleAdminPanel} className="close-btn">
@@ -323,6 +341,12 @@ const App = () => {
                   </p>
                 </div>
               </div>
+              <TournamentManager
+                isAdmin={isAdmin}
+                onCreateTournament={handleCreateTournament}
+                activeTournament={activeTournament}
+                tournaments={tournaments}
+              />
             </div>
           )}
         </>
@@ -431,5 +455,4 @@ const App = () => {
     </div>
   );
 };
-
 export default App;
