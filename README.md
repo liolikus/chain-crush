@@ -31,26 +31,26 @@ This game integrates with the Linera protocol to:
 - [x] **User Authentication System**
   - [x] Login with username
   - [ ] Discord OAuth integration
-  - [] User preferences and settings
+  - [ ] User preferences and settings
   - [x] Secure password hashing
   - [x] Session management with 24-hour timeout
   - [x] Persistent login state
 
 ### 🎨 UI/UX Improvements
-- [] **Smooth Animations**
-  - [] Falling animations
-  - [] Match explosion effects
-  - [] Score popup animations
-  - [] Smooth transitions between game states
+- [ ] **Smooth Animations**
+  - [ ] Falling animations
+  - [ ] Match explosion effects
+  - [ ] Score popup animations
+  - [ ] Smooth transitions between game states
   - [ ] Particle effects for special matches
 
 ### 🏆 Leaderboard & Competition
-- [] **Advanced Leaderboard System**
-  - [] Separate smart contract for leaderboard management
-  - [] Multiple leaderboard categories (daily, weekly, all-time)
-  - [] Player ranking system with tiers
+- [ ] **Advanced Leaderboard System**
+  - [ ] Separate smart contract for leaderboard management
+  - [ ] Multiple leaderboard categories (daily, weekly, all-time)
+  - [ ] Player ranking system with tiers
   - [x] Historical performance tracking
-  - [] Seasonal competitions with rewards
+  - [ ] Seasonal competitions with rewards
   - [x] Tournament system with admin controls
   - [x] Tournament timers and countdowns
   - [x] Tournament leaderboards (top 25 results)
