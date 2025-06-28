@@ -1,5 +1,16 @@
 import { checkIsAdmin } from './adminUtils';
 
+// Simple hash function for demo purposes (in production, use proper hashing)
+const simpleHash = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString(16);
+};
+
 export const validateLoginInput = (username, password) => {
   if (!username.trim() || !password.trim()) {
     return 'Please enter both username and password';
@@ -22,17 +33,19 @@ export const authenticateUser = (username, password) => {
 
   if (existingUser) {
     userData = JSON.parse(existingUser);
-    // Verify password
-    if (userData.password !== password) {
+    // Verify password hash
+    const hashedPassword = simpleHash(password);
+    if (userData.passwordHash !== hashedPassword) {
       throw new Error('Incorrect password for this username');
     }
     // Update last login time
     userData.lastLogin = Date.now();
   } else {
-    // Create new user
+    // Create new user with hashed password
+    const hashedPassword = simpleHash(password);
     userData = {
       username: username.trim(),
-      password: password,
+      passwordHash: hashedPassword, // Store hash instead of plain password
       createdAt: Date.now(),
       lastLogin: Date.now(),
       gamesPlayed: 0,
@@ -49,36 +62,57 @@ export const authenticateUser = (username, password) => {
 };
 
 export const saveUserSession = (userData) => {
-  // Save user data and credentials
+  // Save user data without password
+  const sessionData = {
+    ...userData,
+    passwordHash: undefined // Remove password hash from session data
+  };
+  
   localStorage.setItem(`chainCrushUser_${userData.username}`, JSON.stringify(userData));
-  localStorage.setItem('chainCrushUser', JSON.stringify(userData));
-  localStorage.setItem(
-    'chainCrushCredentials',
-    JSON.stringify({
-      username: userData.username,
-      password: userData.password,
-    })
-  );
+  localStorage.setItem('chainCrushUser', JSON.stringify(sessionData));
+  localStorage.setItem('chainCrushSession', JSON.stringify({
+    username: userData.username,
+    isLoggedIn: true,
+    lastLogin: Date.now(),
+    sessionId: Math.random().toString(36).substr(2, 9) // Simple session ID
+  }));
 };
 
 export const loadSavedSession = () => {
   const savedUser = localStorage.getItem('chainCrushUser');
-  const savedCredentials = localStorage.getItem('chainCrushCredentials');
+  const savedSession = localStorage.getItem('chainCrushSession');
 
   let userData = null;
-  let credentials = null;
+  let session = null;
 
   if (savedUser) {
     userData = JSON.parse(savedUser);
   }
 
-  if (savedCredentials) {
-    credentials = JSON.parse(savedCredentials);
+  if (savedSession) {
+    session = JSON.parse(savedSession);
   }
 
-  return { userData, credentials };
+  return { userData, session };
 };
 
 export const clearUserSession = () => {
   localStorage.removeItem('chainCrushUser');
+  localStorage.removeItem('chainCrushSession');
+};
+
+export const isSessionValid = () => {
+  const savedSession = localStorage.getItem('chainCrushSession');
+  if (!savedSession) return false;
+  
+  try {
+    const session = JSON.parse(savedSession);
+    const now = Date.now();
+    const sessionAge = now - session.lastLogin;
+    const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
+    
+    return session.isLoggedIn && sessionAge < maxSessionAge;
+  } catch (error) {
+    return false;
+  }
 };

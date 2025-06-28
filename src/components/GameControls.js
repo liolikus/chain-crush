@@ -13,12 +13,18 @@ const GameControls = ({
   onStartGame,
   onResetGame,
   formatTime,
+  activeTournament,
 }) => {
   return (
     <div className="game-header">
       <div className="timer">
+        <div className="timer-label">🎮 GAME TIMER</div>
         <h3>⏰ Time: {formatTime(timeLeft)}</h3>
+        <h3>🏆 Score: {scoreDisplay}</h3>
         <p>🎯 Moves: {moves}</p>
+        {activeTournament && (
+          <p className="tournament-indicator">🏆 Tournament Active: {activeTournament.name}</p>
+        )}
         {isConnected && gameStarted && (
           <p className="blockchain-indicator">⛓️ Score will be recorded on microchain!</p>
         )}
@@ -54,6 +60,13 @@ const GameControls = ({
             <p>
               Game Time: <strong>{60 - timeLeft}s</strong>
             </p>
+            {activeTournament && (
+              <div className="tournament-notice">
+                <p className="tournament-success">
+                  🏆 Score submitted to {activeTournament.name} tournament!
+                </p>
+              </div>
+            )}
             {isConnected && scoreDisplay > 0 && (
               <div className="token-conversion">
                 <p className="blockchain-success">

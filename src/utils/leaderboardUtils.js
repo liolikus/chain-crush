@@ -1,3 +1,5 @@
+import { getActiveTournament, getTournamentLeaderboard } from './tournamentUtils';
+
 export const getRealLeaderboard = () => {
   const allUsers = [];
 
@@ -26,7 +28,47 @@ export const getRealLeaderboard = () => {
   return allUsers.sort((a, b) => b.totalScore - a.totalScore);
 };
 
-export const getDisplayLeaderboard = (leaderboard, currentUser) => {
+export const getDisplayLeaderboard = (leaderboard, currentUser, activeTournament = null) => {
+  // If there's an active tournament (including grace period), show tournament leaderboard
+  if (activeTournament) {
+    const tournamentLeaderboard = getTournamentLeaderboard(activeTournament.id);
+    const now = Date.now();
+    const oneMinuteAfterEnd = 60 * 1000; // 1 minute in milliseconds
+    const isGracePeriod = activeTournament.endDate <= now && (activeTournament.endDate + oneMinuteAfterEnd) > now;
+    
+    if (tournamentLeaderboard.length === 0) {
+      return [
+        {
+          playerId: isGracePeriod ? 'Tournament ended - no participants' : 'No tournament entries yet',
+          score: 0,
+          tokens: 0,
+          moves: 0,
+          gameTime: 0,
+          timestamp: Date.now(),
+          isEmpty: true,
+          isTournament: true,
+          isGracePeriod: isGracePeriod,
+        },
+      ];
+    }
+
+    // Convert tournament leaderboard to match the expected format
+    return tournamentLeaderboard.map((entry, index) => ({
+      playerId: entry.username,
+      score: entry.score,
+      tokens: entry.score,
+      moves: entry.moves || 0,
+      gameTime: entry.gameTime || 0,
+      gamesPlayed: 1,
+      totalScore: entry.score,
+      timestamp: entry.timestamp,
+      rank: index + 1,
+      isTournament: true,
+      isGracePeriod: isGracePeriod,
+    }));
+  }
+
+  // Show regular leaderboard when no tournament is active
   const realLeaderboard = getRealLeaderboard();
 
   if (realLeaderboard.length === 0) {

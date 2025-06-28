@@ -1,16 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 const LoginModal = ({
   showLogin,
-  username,
-  password,
   loginError,
-  onUsernameChange,
-  onPasswordChange,
   onLogin,
   onClose,
 }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (showLogin) {
+      setUsername('');
+      setPassword('');
+    }
+  }, [showLogin]);
+
   if (!showLogin) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onLogin(username, password);
+  };
 
   return (
     <div className="login-overlay">
@@ -21,16 +33,17 @@ const LoginModal = ({
             ✕
           </button>
         </div>
-        <form onSubmit={onLogin} className="login-form">
+        <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="username">👤 Username</label>
             <input
               type="text"
               id="username"
               value={username}
-              onChange={onUsernameChange}
+              onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
               autoComplete="username"
+              required
             />
           </div>
           <div className="form-group">
@@ -39,17 +52,11 @@ const LoginModal = ({
               type="password"
               id="password"
               value={password}
-              onChange={onPasswordChange}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               autoComplete="current-password"
+              required
             />
-          </div>
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
-              <input type="checkbox" checked={true} readOnly />
-              <span className="checkmark"></span>
-              🔒 Remember my login (always enabled)
-            </label>
           </div>
           {loginError && <div className="login-error">⚠️ {loginError}</div>}
           <button type="submit" className="login-btn">
@@ -58,6 +65,7 @@ const LoginModal = ({
           <p className="login-note">
             <small>No registration required - just create a username and password!</small>
             <small>Your login and stats will be remembered automatically</small>
+            <small className="security-notice">🔒 Passwords are securely hashed and never stored in plain text</small>
           </p>
         </form>
       </div>

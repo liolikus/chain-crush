@@ -3,6 +3,8 @@ import { useLinera } from './hooks/useLinera';
 import { useAuth } from './hooks/useAuth';
 import { useGameLogic } from './hooks/useGameLogic';
 import { useGameTimer } from './hooks/useGameTimer';
+import { useTournament } from './hooks/useTournament';
+import { useAudio } from './hooks/useAudio';
 import { resetLeaderboardData } from './utils/adminUtils';
 import { getDisplayLeaderboard, updateUserStats } from './utils/leaderboardUtils';
 
@@ -14,6 +16,9 @@ import UserBar from './components/UserBar';
 import Leaderboard from './components/Leaderboard';
 import BlockchainInfo from './components/BlockchainInfo';
 import LoadingScreen from './components/LoadingScreen';
+import TournamentTimer from './components/TournamentTimer';
+import TournamentManager from './components/TournamentManager';
+import MuteButton from './components/MuteButton';
 
 const App = () => {
   const [gameOver, setGameOver] = useState(false);
@@ -70,6 +75,24 @@ const App = () => {
     applicationId,
   } = useLinera();
 
+  const {
+    activeTournament,
+    tournaments,
+    tournamentTimeLeft,
+    upcomingTournament,
+    timeUntilUpcoming,
+    showCreateTournament,
+    createTournamentForm,
+    createError,
+    setShowCreateTournament,
+    handleCreateTournament,
+    handleDeleteTournament,
+    submitTournamentScore,
+    getFormattedTimeLeft,
+    updateCreateForm,
+    loadTournaments
+  } = useTournament();
+
   const [handleGameOverCallback, setHandleGameOverCallback] = useState(null);
 
   const { timeLeft, formatTime, resetTimer } = useGameTimer(
@@ -78,11 +101,18 @@ const App = () => {
     handleGameOverCallback
   );
 
+  const { isMuted, isPlaying, toggleMute } = useAudio();
+
   const handleGameOver = useCallback(async () => {
     setGameOver(true);
     const gameTime = 60 - timeLeft;
 
     updateUserStats(currentUser, scoreDisplay, gameTime, moves, setCurrentUser);
+
+    // Submit to tournament if active
+    if (activeTournament && currentUser) {
+      submitTournamentScore(currentUser.username, scoreDisplay, gameTime, moves);
+    }
 
     if (isConnected && scoreDisplay > 0) {
       try {
@@ -101,6 +131,8 @@ const App = () => {
     currentUser,
     setCurrentUser,
     timeLeft,
+    activeTournament,
+    submitTournamentScore,
   ]);
 
   // Update the callback when handleGameOver changes
@@ -109,8 +141,8 @@ const App = () => {
   }, [handleGameOver]);
 
   const displayLeaderboard = useMemo(() => {
-    return getDisplayLeaderboard(leaderboard, currentUser);
-  }, [leaderboard, currentUser]);
+    return getDisplayLeaderboard(leaderboard, currentUser, activeTournament);
+  }, [leaderboard, currentUser, activeTournament]);
 
   // Connection timeout handling
   useEffect(() => {
@@ -279,11 +311,7 @@ const App = () => {
 
       <LoginModal
         showLogin={showLogin}
-        username={username}
-        password={password}
         loginError={loginError}
-        onUsernameChange={(e) => setUsername(e.target.value)}
-        onPasswordChange={(e) => setPassword(e.target.value)}
         onLogin={handleLogin}
         onClose={() => setShowLogin(false)}
       />
@@ -293,39 +321,55 @@ const App = () => {
         currentUser={currentUser}
         isAdmin={isAdmin}
         onLogout={handleLogout}
+        onToggleAdminPanel={toggleAdminPanel}
+        showAdminPanel={showAdminPanel}
+        upcomingTournament={upcomingTournament}
+        timeUntilUpcoming={timeUntilUpcoming}
+      />
+
+      {/* Tournament Timer */}
+      <TournamentTimer
+        activeTournament={activeTournament}
+        timeLeft={tournamentTimeLeft}
+        formattedTime={getFormattedTimeLeft()}
       />
 
       {/* Admin Controls */}
-      {isAdmin && (
-        <>
-          {!showAdminPanel ? (
-            <button onClick={toggleAdminPanel} className="admin-toggle" title="Admin Panel">
-              ⚙️
+      {isAdmin && showAdminPanel && (
+        <div className="admin-controls">
+          <div className="admin-header">
+            <h3>Admin Panel</h3>
+            <button onClick={toggleAdminPanel} className="close-btn">
+              ✕
             </button>
-          ) : (
-            <div className="admin-controls">
-              <div className="admin-header">
-                <h3>Admin Panel</h3>
-                <button onClick={toggleAdminPanel} className="close-btn">
-                  ✕
-                </button>
-              </div>
-              <div className="admin-actions">
-                <button onClick={resetLeaderboard} className="admin-btn danger">
-                  🗑️ Reset Leaderboard
-                </button>
-                <div className="admin-info">
-                  <p>
-                    <small>🔧 Admin Mode Active</small>
-                  </p>
-                  <p>
-                    <small>Chain: {isConnected ? 'Connected' : 'Offline'}</small>
-                  </p>
-                </div>
-              </div>
+          </div>
+          <div className="admin-actions">
+            <button onClick={resetLeaderboard} className="admin-btn danger">
+              🗑️ Reset Leaderboard
+            </button>
+            <div className="admin-info">
+              <p>
+                <small>🔧 Admin Mode Active</small>
+              </p>
+              <p>
+                <small>Chain: {isConnected ? 'Connected' : 'Offline'}</small>
+              </p>
             </div>
-          )}
-        </>
+          </div>
+          
+          {/* Tournament Management */}
+          <TournamentManager
+            tournaments={tournaments}
+            showCreateTournament={showCreateTournament}
+            createTournamentForm={createTournamentForm}
+            createError={createError}
+            onShowCreate={() => setShowCreateTournament(true)}
+            onHideCreate={() => setShowCreateTournament(false)}
+            onCreateTournament={handleCreateTournament}
+            onDeleteTournament={handleDeleteTournament}
+            onUpdateForm={updateCreateForm}
+          />
+        </div>
       )}
 
       <div className="top-layout">
@@ -360,6 +404,7 @@ const App = () => {
             onStartGame={startGame}
             onResetGame={resetGame}
             formatTime={formatTime}
+            activeTournament={activeTournament}
           />
 
           <div className="blockchain-status">
@@ -387,6 +432,7 @@ const App = () => {
           isConnected={isConnected}
           isAdmin={isAdmin}
           onResetLeaderboard={resetLeaderboard}
+          activeTournament={activeTournament}
         />
       </div>
 
@@ -404,6 +450,13 @@ const App = () => {
             <p>
               Game Time: <strong>{60 - timeLeft}s</strong>
             </p>
+            {activeTournament && (
+              <div className="tournament-notice">
+                <p className="tournament-success">
+                  🏆 Score submitted to {activeTournament.name} tournament!
+                </p>
+              </div>
+            )}
             {isConnected && scoreDisplay > 0 && (
               <div className="token-conversion">
                 <p className="blockchain-success">
@@ -428,6 +481,13 @@ const App = () => {
       <div className="linera-logo">
         <img src="/Linera_Red_H.svg" alt="Linera" />
       </div>
+
+      {/* Mute Button */}
+      <MuteButton 
+        isMuted={isMuted}
+        isPlaying={isPlaying}
+        onToggleMute={toggleMute}
+      />
     </div>
   );
 };

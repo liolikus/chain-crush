@@ -5,35 +5,30 @@ import {
   saveUserSession,
   loadSavedSession,
   clearUserSession,
+  isSessionValid,
 } from '../utils/authUtils';
 
 export const useAuth = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const { userData, credentials } = loadSavedSession();
-
-    if (userData) {
-      setCurrentUser(userData);
-      setIsLoggedIn(true);
-      setIsAdmin(userData.isAdmin || false);
-    }
-
-    if (credentials) {
-      setUsername(credentials.username);
-      setPassword(credentials.password);
+    // Check if there's a valid session on mount
+    if (isSessionValid()) {
+      const { userData } = loadSavedSession();
+      if (userData) {
+        setCurrentUser(userData);
+        setIsLoggedIn(true);
+        setIsAdmin(userData.isAdmin || false);
+      }
     }
   }, []);
 
   const handleLogin = useCallback(
-    (e) => {
-      e.preventDefault();
+    (username, password) => {
       setLoginError('');
 
       const validationError = validateLoginInput(username, password);
@@ -54,7 +49,7 @@ export const useAuth = () => {
         setLoginError(error.message);
       }
     },
-    [username, password]
+    []
   );
 
   const handleLogout = useCallback(() => {
@@ -62,22 +57,15 @@ export const useAuth = () => {
     setCurrentUser(null);
     setIsLoggedIn(false);
     setIsAdmin(false);
-    setUsername('');
-    setPassword('');
   }, []);
 
   return {
     isLoggedIn,
     showLogin,
-    username,
-    password,
     loginError,
     currentUser,
     isAdmin,
     setShowLogin,
-    setUsername,
-    setPassword,
-    setCurrentUser,
     handleLogin,
     handleLogout,
   };
