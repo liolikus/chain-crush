@@ -10,7 +10,7 @@ const TournamentManager = ({
   onHideCreate,
   onCreateTournament,
   onDeleteTournament,
-  onUpdateForm
+  onUpdateForm,
 }) => {
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleString();
@@ -19,12 +19,12 @@ const TournamentManager = ({
   const getStatusBadge = (tournament) => {
     const now = Date.now();
     const oneMinuteAfterEnd = 60 * 1000; // 1 minute in milliseconds
-    
-    if ((tournament.endDate + oneMinuteAfterEnd) <= now) {
+
+    if (tournament.endDate + oneMinuteAfterEnd <= now) {
       return <span className="status-badge ended">ENDED</span>;
     } else if (tournament.startDate > now) {
       return <span className="status-badge scheduled">SCHEDULED</span>;
-    } else if (tournament.endDate <= now && (tournament.endDate + oneMinuteAfterEnd) > now) {
+    } else if (tournament.endDate <= now && tournament.endDate + oneMinuteAfterEnd > now) {
       return <span className="status-badge grace-period">ENDING</span>;
     } else {
       return <span className="status-badge active">ACTIVE</span>;
@@ -34,39 +34,40 @@ const TournamentManager = ({
   const handleDeleteTournament = (tournament) => {
     const now = Date.now();
     const isActive = tournament.startDate <= now && tournament.endDate > now;
-    
+
     if (isActive) {
       alert('Cannot delete an active tournament. Please wait for it to end.');
       return;
     }
-    
-    const confirmMessage = tournament.status === 'ended' 
-      ? `Are you sure you want to delete the ended tournament "${tournament.name}"? This will permanently remove all tournament data.`
-      : `Are you sure you want to delete the scheduled tournament "${tournament.name}"?`;
-    
+
+    const confirmMessage =
+      tournament.status === 'ended'
+        ? `Are you sure you want to delete the ended tournament "${tournament.name}"? This will permanently remove all tournament data.`
+        : `Are you sure you want to delete the scheduled tournament "${tournament.name}"?`;
+
     if (window.confirm(confirmMessage)) {
       onDeleteTournament(tournament.id);
     }
   };
 
   const handleClearEndedTournaments = () => {
-    const endedTournaments = tournaments.filter(t => t.endDate <= Date.now());
-    
+    const endedTournaments = tournaments.filter((t) => t.endDate <= Date.now());
+
     if (endedTournaments.length === 0) {
       alert('No ended tournaments to clear.');
       return;
     }
-    
+
     const confirmMessage = `Are you sure you want to delete all ${endedTournaments.length} ended tournaments? This will permanently remove all tournament data.`;
-    
+
     if (window.confirm(confirmMessage)) {
-      endedTournaments.forEach(tournament => {
+      endedTournaments.forEach((tournament) => {
         onDeleteTournament(tournament.id);
       });
     }
   };
 
-  const endedTournamentsCount = tournaments.filter(t => t.endDate <= Date.now()).length;
+  const endedTournamentsCount = tournaments.filter((t) => t.endDate <= Date.now()).length;
 
   return (
     <div className="tournament-manager">
@@ -98,7 +99,7 @@ const TournamentManager = ({
                 required
               />
             </div>
-            
+
             <div className="form-row">
               <div className="form-group">
                 <label>Start Date:</label>
@@ -167,7 +168,7 @@ const TournamentManager = ({
                   <h5>{tournament.name}</h5>
                   {getStatusBadge(tournament)}
                 </div>
-                
+
                 <div className="tournament-details">
                   <div className="detail-row">
                     <span className="label">Start:</span>
@@ -206,9 +207,10 @@ const TournamentManager = ({
                   <button
                     onClick={() => handleDeleteTournament(tournament)}
                     className="admin-btn danger small"
-                    title={tournament.startDate <= Date.now() && tournament.endDate > Date.now() 
-                      ? "Cannot delete active tournament" 
-                      : "Delete tournament"
+                    title={
+                      tournament.startDate <= Date.now() && tournament.endDate > Date.now()
+                        ? 'Cannot delete active tournament'
+                        : 'Delete tournament'
                     }
                     disabled={tournament.startDate <= Date.now() && tournament.endDate > Date.now()}
                   >
@@ -219,7 +221,9 @@ const TournamentManager = ({
                       onClick={() => {
                         const leaderboard = getTournamentLeaderboard(tournament.id);
                         console.log(`${tournament.name} Leaderboard:`, leaderboard);
-                        alert(`${tournament.name} leaderboard has ${leaderboard.length} entries. Check console for details.`);
+                        alert(
+                          `${tournament.name} leaderboard has ${leaderboard.length} entries. Check console for details.`
+                        );
                       }}
                       className="admin-btn secondary small"
                     >
@@ -236,4 +240,4 @@ const TournamentManager = ({
   );
 };
 
-export default TournamentManager; 
+export default TournamentManager;

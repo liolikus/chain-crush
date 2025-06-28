@@ -1,25 +1,27 @@
 import React from 'react';
 
-const UserBar = ({ 
-  isLoggedIn, 
-  currentUser, 
-  isAdmin, 
-  onLogout, 
-  onToggleAdminPanel, 
+const UserBar = ({
+  isLoggedIn,
+  currentUser,
+  isAdmin,
+  onLogout,
+  onToggleAdminPanel,
   showAdminPanel,
   upcomingTournament,
-  timeUntilUpcoming
+  timeUntilUpcoming,
 }) => {
   if (!isLoggedIn) return null;
 
   const formatTimeUntil = (timeLeft) => {
     if (timeLeft <= 0) return '00:00:00';
-    
+
     const hours = Math.floor(timeLeft / (1000 * 60 * 60));
     const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   return (
@@ -44,8 +46,8 @@ const UserBar = ({
       </div>
       <div className="user-actions">
         {isAdmin && (
-          <button 
-            onClick={onToggleAdminPanel} 
+          <button
+            onClick={onToggleAdminPanel}
             className={`admin-toggle-btn ${showAdminPanel ? 'active' : ''}`}
             title="Admin Panel"
           >

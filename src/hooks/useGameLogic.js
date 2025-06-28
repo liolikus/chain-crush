@@ -8,12 +8,58 @@ import {
 
 const { BOARD_WIDTH, POINTS_PER_THREE, POINTS_PER_FOUR } = GAME_CONFIG;
 
-export const useGameLogic = () => {
+export const useGameLogic = (playSoundEffect = () => {}) => {
   const [currentColorArrangement, setCurrentColorArrangement] = useState([]);
   const [squareBeingDragged, setSquareBeingDragged] = useState(null);
   const [squareBeingReplaced, setSquareBeingReplaced] = useState(null);
   const [scoreDisplay, setScoreDisplay] = useState(0);
   const [moves, setMoves] = useState(0);
+  const [animationStates, setAnimationStates] = useState({});
+  const [scorePopups, setScorePopups] = useState([]);
+
+  // Helper function to add animation class
+  const addAnimationClass = useCallback((index, className, duration = 300) => {
+    setAnimationStates((prev) => ({
+      ...prev,
+      [index]: className,
+    }));
+
+    setTimeout(() => {
+      setAnimationStates((prev) => {
+        const newState = { ...prev };
+        delete newState[index];
+        return newState;
+      });
+    }, duration);
+  }, []);
+
+  // Helper function to add score popup
+  const addScorePopup = useCallback(
+    (score, index) => {
+      const row = Math.floor(index / BOARD_WIDTH);
+      const col = index % BOARD_WIDTH;
+      const x = col * 70 + 35; // Center of the candy
+      const y = row * 70 + 35; // Center of the candy
+
+      const popupId = Date.now() + Math.random();
+      const newPopup = {
+        id: popupId,
+        score,
+        position: { x, y },
+      };
+
+      setScorePopups((prev) => [...prev, newPopup]);
+
+      // Play sound effect for score popup
+      playSoundEffect('scorePopup');
+
+      // Remove popup after animation
+      setTimeout(() => {
+        setScorePopups((prev) => prev.filter((popup) => popup.id !== popupId));
+      }, 1500);
+    },
+    [playSoundEffect]
+  );
 
   const checkForColumnOfFour = useCallback(() => {
     for (let i = 0; i <= 39; i++) {
@@ -25,12 +71,20 @@ export const useGameLogic = () => {
         columnOfFour.every((square) => currentColorArrangement[square] === decidedColor && !isBlank)
       ) {
         setScoreDisplay((score) => score + POINTS_PER_FOUR);
-        columnOfFour.forEach((square) => (currentColorArrangement[square] = BLANK_CANDY));
+
+        // Add match animation to all matched pieces
+        columnOfFour.forEach((square) => {
+          addAnimationClass(square, 'matching');
+          currentColorArrangement[square] = BLANK_CANDY;
+          // Add score popup for each matched piece
+          addScorePopup(POINTS_PER_FOUR, square);
+        });
+
         return true;
       }
     }
     return false;
-  }, [currentColorArrangement]);
+  }, [currentColorArrangement, addAnimationClass, addScorePopup]);
 
   const checkForRowOfFour = useCallback(() => {
     for (let i = 0; i < 64; i++) {
@@ -44,12 +98,20 @@ export const useGameLogic = () => {
         rowOfFour.every((square) => currentColorArrangement[square] === decidedColor && !isBlank)
       ) {
         setScoreDisplay((score) => score + POINTS_PER_FOUR);
-        rowOfFour.forEach((square) => (currentColorArrangement[square] = BLANK_CANDY));
+
+        // Add match animation to all matched pieces
+        rowOfFour.forEach((square) => {
+          addAnimationClass(square, 'matching');
+          currentColorArrangement[square] = BLANK_CANDY;
+          // Add score popup for each matched piece
+          addScorePopup(POINTS_PER_FOUR, square);
+        });
+
         return true;
       }
     }
     return false;
-  }, [currentColorArrangement]);
+  }, [currentColorArrangement, addAnimationClass, addScorePopup]);
 
   const checkForColumnOfThree = useCallback(() => {
     for (let i = 0; i <= 47; i++) {
@@ -63,12 +125,20 @@ export const useGameLogic = () => {
         )
       ) {
         setScoreDisplay((score) => score + POINTS_PER_THREE);
-        columnOfThree.forEach((square) => (currentColorArrangement[square] = BLANK_CANDY));
+
+        // Add match animation to all matched pieces
+        columnOfThree.forEach((square) => {
+          addAnimationClass(square, 'matching');
+          currentColorArrangement[square] = BLANK_CANDY;
+          // Add score popup for each matched piece
+          addScorePopup(POINTS_PER_THREE, square);
+        });
+
         return true;
       }
     }
     return false;
-  }, [currentColorArrangement]);
+  }, [currentColorArrangement, addAnimationClass, addScorePopup]);
 
   const checkForRowOfThree = useCallback(() => {
     for (let i = 0; i < 64; i++) {
@@ -82,12 +152,20 @@ export const useGameLogic = () => {
         rowOfThree.every((square) => currentColorArrangement[square] === decidedColor && !isBlank)
       ) {
         setScoreDisplay((score) => score + POINTS_PER_THREE);
-        rowOfThree.forEach((square) => (currentColorArrangement[square] = BLANK_CANDY));
+
+        // Add match animation to all matched pieces
+        rowOfThree.forEach((square) => {
+          addAnimationClass(square, 'matching');
+          currentColorArrangement[square] = BLANK_CANDY;
+          // Add score popup for each matched piece
+          addScorePopup(POINTS_PER_THREE, square);
+        });
+
         return true;
       }
     }
     return false;
-  }, [currentColorArrangement]);
+  }, [currentColorArrangement, addAnimationClass, addScorePopup]);
 
   const moveIntoSquareBelow = useCallback(() => {
     for (let i = 0; i <= 55; i++) {
@@ -97,14 +175,18 @@ export const useGameLogic = () => {
       if (isFirstRow && currentColorArrangement[i] === BLANK_CANDY) {
         const randomNumber = Math.floor(Math.random() * CANDY_COLORS.length);
         currentColorArrangement[i] = CANDY_COLORS[randomNumber];
+        // Add spawn animation for new candies
+        addAnimationClass(i, 'spawning');
       }
 
       if (currentColorArrangement[i + BOARD_WIDTH] === BLANK_CANDY) {
         currentColorArrangement[i + BOARD_WIDTH] = currentColorArrangement[i];
         currentColorArrangement[i] = BLANK_CANDY;
+        // Add falling animation for moving candies
+        addAnimationClass(i + BOARD_WIDTH, 'falling', 400);
       }
     }
-  }, [currentColorArrangement]);
+  }, [currentColorArrangement, addAnimationClass]);
 
   const createBoard = useCallback(() => {
     const randomColorArrangement = [];
@@ -113,15 +195,28 @@ export const useGameLogic = () => {
       randomColorArrangement.push(randomColor);
     }
     setCurrentColorArrangement(randomColorArrangement);
+    setAnimationStates({}); // Clear all animations
   }, []);
 
-  const dragStart = useCallback((e) => {
-    setSquareBeingDragged(e.target);
-  }, []);
+  const dragStart = useCallback(
+    (e) => {
+      setSquareBeingDragged(e.target);
+      // Add drag start animation
+      const index = parseInt(e.target.getAttribute('data-id'));
+      addAnimationClass(index, 'dragging', 150);
+    },
+    [addAnimationClass]
+  );
 
-  const dragDrop = useCallback((e) => {
-    setSquareBeingReplaced(e.target);
-  }, []);
+  const dragDrop = useCallback(
+    (e) => {
+      setSquareBeingReplaced(e.target);
+      // Add drop target animation
+      const index = parseInt(e.target.getAttribute('data-id'));
+      addAnimationClass(index, 'drop-target', 200);
+    },
+    [addAnimationClass]
+  );
 
   const dragEnd = useCallback(() => {
     if (!squareBeingDragged || !squareBeingReplaced) return;
@@ -171,6 +266,7 @@ export const useGameLogic = () => {
   const resetGame = useCallback(() => {
     setScoreDisplay(0);
     setMoves(0);
+    setAnimationStates({});
     createBoard();
   }, [createBoard]);
 
@@ -179,6 +275,8 @@ export const useGameLogic = () => {
     setCurrentColorArrangement,
     scoreDisplay,
     moves,
+    animationStates,
+    scorePopups,
     dragStart,
     dragDrop,
     dragEnd,

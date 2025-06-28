@@ -19,6 +19,7 @@ import LoadingScreen from './components/LoadingScreen';
 import TournamentTimer from './components/TournamentTimer';
 import TournamentManager from './components/TournamentManager';
 import MuteButton from './components/MuteButton';
+import ScorePopup from './components/ScorePopup';
 
 const App = () => {
   const [gameOver, setGameOver] = useState(false);
@@ -31,24 +32,42 @@ const App = () => {
   const {
     isLoggedIn,
     showLogin,
-    username,
-    password,
     loginError,
     currentUser,
     isAdmin,
     setShowLogin,
-    setUsername,
-    setPassword,
     setCurrentUser,
     handleLogin,
     handleLogout,
   } = useAuth();
+
+  const [handleGameOverCallback, setHandleGameOverCallback] = useState(null);
+
+  const { timeLeft, formatTime, resetTimer } = useGameTimer(
+    gameStarted,
+    gameOver,
+    handleGameOverCallback
+  );
+
+  const { isMuted, isPlaying, hasInteracted, toggleMute, playSoundEffect } = useAudio();
+
+  // Create a memoized playSoundEffect callback to avoid initialization issues
+  const playSoundEffectCallback = useCallback(
+    (soundName) => {
+      if (playSoundEffect) {
+        playSoundEffect(soundName);
+      }
+    },
+    [playSoundEffect]
+  );
 
   const {
     currentColorArrangement,
     setCurrentColorArrangement,
     scoreDisplay,
     moves,
+    animationStates,
+    scorePopups,
     dragStart,
     dragDrop,
     dragEnd,
@@ -59,7 +78,7 @@ const App = () => {
     checkForColumnOfThree,
     checkForRowOfThree,
     moveIntoSquareBelow,
-  } = useGameLogic();
+  } = useGameLogic(playSoundEffectCallback);
 
   const {
     isConnected,
@@ -89,19 +108,8 @@ const App = () => {
     handleDeleteTournament,
     submitTournamentScore,
     getFormattedTimeLeft,
-    updateCreateForm,
-    loadTournaments
+    updateCreateForm
   } = useTournament();
-
-  const [handleGameOverCallback, setHandleGameOverCallback] = useState(null);
-
-  const { timeLeft, formatTime, resetTimer } = useGameTimer(
-    gameStarted,
-    gameOver,
-    handleGameOverCallback
-  );
-
-  const { isMuted, isPlaying, hasInteracted, toggleMute } = useAudio();
 
   const handleGameOver = useCallback(async () => {
     setGameOver(true);
@@ -356,7 +364,7 @@ const App = () => {
               </p>
             </div>
           </div>
-          
+
           {/* Tournament Management */}
           <TournamentManager
             tournaments={tournaments}
@@ -386,10 +394,23 @@ const App = () => {
             currentColorArrangement={currentColorArrangement}
             gameOver={gameOver}
             gameStarted={gameStarted}
+            animationStates={animationStates}
             onDragStart={handleDragStart}
             onDragDrop={handleDragDrop}
             onDragEnd={handleDragEnd}
           />
+
+          {/* Score Popups */}
+          {scorePopups.map((popup) => (
+            <ScorePopup
+              key={popup.id}
+              score={popup.score}
+              position={popup.position}
+              onComplete={() => {
+                // Popup will be automatically removed by the hook
+              }}
+            />
+          ))}
 
           <GameControls
             gameStarted={gameStarted}
@@ -483,7 +504,7 @@ const App = () => {
       </div>
 
       {/* Mute Button */}
-      <MuteButton 
+      <MuteButton
         isMuted={isMuted}
         isPlaying={isPlaying}
         hasInteracted={hasInteracted}

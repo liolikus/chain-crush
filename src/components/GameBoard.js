@@ -4,6 +4,7 @@ const GameBoard = ({
   currentColorArrangement,
   gameOver,
   gameStarted,
+  animationStates,
   onDragStart,
   onDragDrop,
   onDragEnd,
@@ -23,10 +24,12 @@ const GameBoard = ({
           onDragLeave={(e) => e.preventDefault()}
           onDrop={onDragDrop}
           onDragEnd={onDragEnd}
+          className={`candy-piece ${gameOver ? 'game-over' : ''} ${
+            gameStarted ? 'game-active' : ''
+          } ${animationStates[index] || ''}`}
           style={{
             opacity: gameOver ? 0.5 : 1,
             pointerEvents: !gameStarted || gameOver ? 'none' : 'auto',
-            transition: 'opacity 0.3s ease',
           }}
         />
       ))}

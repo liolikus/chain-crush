@@ -27,30 +27,27 @@ export const useAuth = () => {
     }
   }, []);
 
-  const handleLogin = useCallback(
-    (username, password) => {
-      setLoginError('');
+  const handleLogin = useCallback((username, password) => {
+    setLoginError('');
 
-      const validationError = validateLoginInput(username, password);
-      if (validationError) {
-        setLoginError(validationError);
-        return;
-      }
+    const validationError = validateLoginInput(username, password);
+    if (validationError) {
+      setLoginError(validationError);
+      return;
+    }
 
-      try {
-        const { userData, isUserAdmin } = authenticateUser(username, password);
-        saveUserSession(userData);
+    try {
+      const { userData, isUserAdmin } = authenticateUser(username, password);
+      saveUserSession(userData);
 
-        setCurrentUser(userData);
-        setIsLoggedIn(true);
-        setIsAdmin(isUserAdmin);
-        setShowLogin(false);
-      } catch (error) {
-        setLoginError(error.message);
-      }
-    },
-    []
-  );
+      setCurrentUser(userData);
+      setIsLoggedIn(true);
+      setIsAdmin(isUserAdmin);
+      setShowLogin(false);
+    } catch (error) {
+      setLoginError(error.message);
+    }
+  }, []);
 
   const handleLogout = useCallback(() => {
     clearUserSession();
@@ -66,6 +63,7 @@ export const useAuth = () => {
     currentUser,
     isAdmin,
     setShowLogin,
+    setCurrentUser,
     handleLogin,
     handleLogout,
   };

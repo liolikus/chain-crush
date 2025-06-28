@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const LoginModal = ({
-  showLogin,
-  loginError,
-  onLogin,
-  onClose,
-}) => {
+const LoginModal = ({ showLogin, loginError, onLogin, onClose }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -65,7 +60,9 @@ const LoginModal = ({
           <p className="login-note">
             <small>No registration required - just create a username and password!</small>
             <small>Your login and stats will be remembered automatically</small>
-            <small className="security-notice">🔒 Passwords are securely hashed and never stored in plain text</small>
+            <small className="security-notice">
+              🔒 Passwords are securely hashed and never stored in plain text
+            </small>
           </p>
         </form>
       </div>

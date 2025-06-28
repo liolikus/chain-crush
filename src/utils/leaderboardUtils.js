@@ -1,4 +1,4 @@
-import { getActiveTournament, getTournamentLeaderboard } from './tournamentUtils';
+import { getTournamentLeaderboard } from './tournamentUtils';
 
 export const getRealLeaderboard = () => {
   const allUsers = [];
@@ -34,12 +34,15 @@ export const getDisplayLeaderboard = (leaderboard, currentUser, activeTournament
     const tournamentLeaderboard = getTournamentLeaderboard(activeTournament.id);
     const now = Date.now();
     const oneMinuteAfterEnd = 60 * 1000; // 1 minute in milliseconds
-    const isGracePeriod = activeTournament.endDate <= now && (activeTournament.endDate + oneMinuteAfterEnd) > now;
-    
+    const isGracePeriod =
+      activeTournament.endDate <= now && activeTournament.endDate + oneMinuteAfterEnd > now;
+
     if (tournamentLeaderboard.length === 0) {
       return [
         {
-          playerId: isGracePeriod ? 'Tournament ended - no participants' : 'No tournament entries yet',
+          playerId: isGracePeriod
+            ? 'Tournament ended - no participants'
+            : 'No tournament entries yet',
           score: 0,
           tokens: 0,
           moves: 0,

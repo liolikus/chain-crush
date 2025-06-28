@@ -5,8 +5,9 @@ const TournamentTimer = ({ activeTournament, timeLeft, formattedTime }) => {
 
   const now = Date.now();
   const oneMinuteAfterEnd = 60 * 1000; // 1 minute in milliseconds
-  const isGracePeriod = activeTournament.endDate <= now && (activeTournament.endDate + oneMinuteAfterEnd) > now;
-  
+  const isGracePeriod =
+    activeTournament.endDate <= now && activeTournament.endDate + oneMinuteAfterEnd > now;
+
   const isEndingSoon = timeLeft < 5 * 60 * 1000; // Less than 5 minutes
   const isEndingVerySoon = timeLeft < 60 * 1000; // Less than 1 minute
 
@@ -24,20 +25,23 @@ const TournamentTimer = ({ activeTournament, timeLeft, formattedTime }) => {
         <div className="timer-label">
           {isGracePeriod ? 'Tournament Ended - Leaderboard Visible For:' : 'Tournament Ends In:'}
         </div>
-        <div className={`timer-countdown ${isEndingVerySoon ? 'urgent' : isEndingSoon ? 'warning' : 'normal'}`}>
+        <div
+          className={`timer-countdown ${
+            isEndingVerySoon ? 'urgent' : isEndingSoon ? 'warning' : 'normal'
+          }`}
+        >
           {formattedTime}
         </div>
       </div>
       <div className="tournament-info">
         <small>
-          {isGracePeriod 
+          {isGracePeriod
             ? '🏆 Tournament has ended! Final results will be visible for 1 minute.'
-            : '🎮 Each game has 60 seconds. Play multiple games during the tournament!'
-          }
+            : '🎮 Each game has 60 seconds. Play multiple games during the tournament!'}
         </small>
       </div>
     </div>
   );
 };
 
-export default TournamentTimer; 
+export default TournamentTimer;

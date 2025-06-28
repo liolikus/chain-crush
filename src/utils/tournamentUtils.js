@@ -1,7 +1,7 @@
 // Tournament utility functions
+export const TOURNAMENTS_KEY = 'chainCrushTournaments';
+
 const TOURNAMENT_STORAGE_KEY = 'chainCrushTournaments';
-const ACTIVE_TOURNAMENT_KEY = 'chainCrushActiveTournament';
-const TOURNAMENT_LEADERBOARD_PREFIX = 'chainCrushTournamentLeaderboard_';
 
 export const createTournament = (name, startDate, endDate) => {
   const tournament = {
@@ -12,7 +12,7 @@ export const createTournament = (name, startDate, endDate) => {
     createdAt: Date.now(),
     status: 'scheduled', // scheduled, active, ended
     participants: [],
-    leaderboard: []
+    leaderboard: [],
   };
 
   const tournaments = getTournaments();
@@ -36,10 +36,9 @@ export const getActiveTournament = () => {
   const tournaments = getTournaments();
   const now = Date.now();
   const oneMinuteAfterEnd = 60 * 1000; // 1 minute in milliseconds
-  
-  return tournaments.find(tournament => 
-    tournament.startDate <= now && 
-    (tournament.endDate + oneMinuteAfterEnd) > now
+
+  return tournaments.find(
+    (tournament) => tournament.startDate <= now && tournament.endDate + oneMinuteAfterEnd > now
   );
 };
 
@@ -49,22 +48,24 @@ export const updateTournamentStatus = () => {
   const oneMinuteAfterEnd = 60 * 1000; // 1 minute in milliseconds
   let hasChanges = false;
 
-  tournaments.forEach(tournament => {
+  tournaments.forEach((tournament) => {
     const oldStatus = tournament.status;
-    
+
     if (tournament.startDate > now) {
       tournament.status = 'scheduled';
     } else if (tournament.startDate <= now && tournament.endDate > now) {
       tournament.status = 'active';
-    } else if (tournament.endDate <= now && (tournament.endDate + oneMinuteAfterEnd) > now) {
+    } else if (tournament.endDate <= now && tournament.endDate + oneMinuteAfterEnd > now) {
       // Keep as active during grace period
       tournament.status = 'active';
-    } else if ((tournament.endDate + oneMinuteAfterEnd) <= now) {
+    } else if (tournament.endDate + oneMinuteAfterEnd <= now) {
       tournament.status = 'ended';
     }
-    
+
     if (oldStatus !== tournament.status) {
-      console.log(`Tournament ${tournament.name} status changed from ${oldStatus} to ${tournament.status}`);
+      console.log(
+        `Tournament ${tournament.name} status changed from ${oldStatus} to ${tournament.status}`
+      );
       hasChanges = true;
     }
   });
@@ -81,9 +82,9 @@ export const forceUpdateTournamentStatuses = () => {
   const now = Date.now();
   let hasChanges = false;
 
-  tournaments.forEach(tournament => {
+  tournaments.forEach((tournament) => {
     const oldStatus = tournament.status;
-    
+
     if (tournament.startDate > now) {
       tournament.status = 'scheduled';
     } else if (tournament.startDate <= now && tournament.endDate > now) {
@@ -91,7 +92,7 @@ export const forceUpdateTournamentStatuses = () => {
     } else if (tournament.endDate <= now) {
       tournament.status = 'ended';
     }
-    
+
     if (oldStatus !== tournament.status) {
       hasChanges = true;
     }
@@ -106,12 +107,12 @@ export const forceUpdateTournamentStatuses = () => {
 
 export const addTournamentScore = (tournamentId, username, score, gameTime, moves) => {
   const tournaments = getTournaments();
-  const tournament = tournaments.find(t => t.id === tournamentId);
-  
+  const tournament = tournaments.find((t) => t.id === tournamentId);
+
   if (!tournament) return false;
 
-  const existingEntry = tournament.leaderboard.find(entry => entry.username === username);
-  
+  const existingEntry = tournament.leaderboard.find((entry) => entry.username === username);
+
   if (existingEntry) {
     // Update existing entry with best score
     if (score > existingEntry.score) {
@@ -127,9 +128,9 @@ export const addTournamentScore = (tournamentId, username, score, gameTime, move
       score,
       gameTime,
       moves,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     // Add to participants if not already there
     if (!tournament.participants.includes(username)) {
       tournament.participants.push(username);
@@ -145,14 +146,14 @@ export const addTournamentScore = (tournamentId, username, score, gameTime, move
 
 export const getTournamentLeaderboard = (tournamentId) => {
   const tournaments = getTournaments();
-  const tournament = tournaments.find(t => t.id === tournamentId);
-  
+  const tournament = tournaments.find((t) => t.id === tournamentId);
+
   return tournament ? tournament.leaderboard : [];
 };
 
 export const deleteTournament = (tournamentId) => {
   const tournaments = getTournaments();
-  const filteredTournaments = tournaments.filter(t => t.id !== tournamentId);
+  const filteredTournaments = tournaments.filter((t) => t.id !== tournamentId);
   localStorage.setItem(TOURNAMENT_STORAGE_KEY, JSON.stringify(filteredTournaments));
 };
 
@@ -185,27 +186,29 @@ export const validateTournamentDates = (startDate, endDate) => {
 
 export const formatTournamentTime = (timeLeft) => {
   if (timeLeft <= 0) return '00:00:00';
-  
+
   const hours = Math.floor(timeLeft / (1000 * 60 * 60));
   const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-  
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds
+    .toString()
+    .padStart(2, '0')}`;
 };
 
 export const getClosestUpcomingTournament = () => {
   const tournaments = getTournaments();
   const now = Date.now();
-  
+
   // Find tournaments that haven't started yet
-  const upcomingTournaments = tournaments.filter(tournament => 
-    tournament.startDate > now && tournament.status === 'scheduled'
+  const upcomingTournaments = tournaments.filter(
+    (tournament) => tournament.startDate > now && tournament.status === 'scheduled'
   );
-  
+
   if (upcomingTournaments.length === 0) {
     return null;
   }
-  
+
   // Sort by start date and return the closest one
   return upcomingTournaments.sort((a, b) => a.startDate - b.startDate)[0];
 };

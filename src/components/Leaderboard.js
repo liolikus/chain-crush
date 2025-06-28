@@ -1,6 +1,12 @@
 import React from 'react';
 
-const Leaderboard = ({ displayLeaderboard, isConnected, isAdmin, onResetLeaderboard, activeTournament }) => {
+const Leaderboard = ({
+  displayLeaderboard,
+  isConnected,
+  isAdmin,
+  onResetLeaderboard,
+  activeTournament,
+}) => {
   const getLeaderboardTitle = () => {
     if (activeTournament) {
       return `🏆 ${activeTournament.name} Tournament`;
@@ -16,7 +22,11 @@ const Leaderboard = ({ displayLeaderboard, isConnected, isAdmin, onResetLeaderbo
   };
 
   return (
-    <div className={`leaderboard ${isAdmin ? 'admin-mode' : ''} ${activeTournament ? 'tournament-mode' : ''}`}>
+    <div
+      className={`leaderboard ${isAdmin ? 'admin-mode' : ''} ${
+        activeTournament ? 'tournament-mode' : ''
+      }`}
+    >
       <h3>{getLeaderboardTitle()}</h3>
       {activeTournament && (
         <div className="tournament-leaderboard-info">
@@ -33,10 +43,9 @@ const Leaderboard = ({ displayLeaderboard, isConnected, isAdmin, onResetLeaderbo
           >
             {entry.isEmpty ? (
               <span className="empty-message">
-                {activeTournament 
-                  ? '🎮 Play during the tournament to appear here!' 
-                  : '🎮 Play your first game to appear on the leaderboard!'
-                }
+                {activeTournament
+                  ? '🎮 Play during the tournament to appear here!'
+                  : '🎮 Play your first game to appear on the leaderboard!'}
               </span>
             ) : (
               <>
@@ -50,11 +59,14 @@ const Leaderboard = ({ displayLeaderboard, isConnected, isAdmin, onResetLeaderbo
           </div>
         ))}
       </div>
-      {!isConnected && displayLeaderboard.length > 0 && !displayLeaderboard[0].isEmpty && !activeTournament && (
-        <p className="local-notice">
-          <small>* Local leaderboard (offline mode)</small>
-        </p>
-      )}
+      {!isConnected &&
+        displayLeaderboard.length > 0 &&
+        !displayLeaderboard[0].isEmpty &&
+        !activeTournament && (
+          <p className="local-notice">
+            <small>* Local leaderboard (offline mode)</small>
+          </p>
+        )}
       {activeTournament && (
         <p className="tournament-notice">
           <small>🏆 Tournament scores are automatically saved</small>

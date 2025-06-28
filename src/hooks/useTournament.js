@@ -9,7 +9,7 @@ import {
   deleteTournament,
   validateTournamentDates,
   formatTournamentTime,
-  getClosestUpcomingTournament
+  getClosestUpcomingTournament,
 } from '../utils/tournamentUtils';
 
 export const useTournament = () => {
@@ -24,15 +24,20 @@ export const useTournament = () => {
     startDate: '',
     startTime: '',
     endDate: '',
-    endTime: ''
+    endTime: '',
   });
   const [createError, setCreateError] = useState('');
+
+  const loadTournaments = useCallback(() => {
+    const allTournaments = getTournaments();
+    setTournaments(allTournaments);
+  }, []);
 
   // Load tournaments and force update statuses on mount
   useEffect(() => {
     forceUpdateTournamentStatuses();
     loadTournaments();
-  }, []);
+  }, [loadTournaments]);
 
   // Update tournament status and find active tournament
   useEffect(() => {
@@ -46,17 +51,18 @@ export const useTournament = () => {
       if (activeTournament) {
         const now = Date.now();
         const oneMinuteAfterEnd = 60 * 1000; // 1 minute in milliseconds
-        const isGracePeriod = activeTournament.endDate <= now && (activeTournament.endDate + oneMinuteAfterEnd) > now;
-        
+        const isGracePeriod =
+          activeTournament.endDate <= now && activeTournament.endDate + oneMinuteAfterEnd > now;
+
         let timeLeft;
         if (isGracePeriod) {
           // During grace period, show time left until leaderboard disappears
-          timeLeft = (activeTournament.endDate + oneMinuteAfterEnd) - now;
+          timeLeft = activeTournament.endDate + oneMinuteAfterEnd - now;
         } else {
           // Normal tournament time
           timeLeft = activeTournament.endDate - now;
         }
-        
+
         setTournamentTimeLeft(Math.max(0, timeLeft));
       } else {
         setTournamentTimeLeft(0);
@@ -65,7 +71,7 @@ export const useTournament = () => {
       // Update upcoming tournament timer
       const upcoming = getClosestUpcomingTournament();
       setUpcomingTournament(upcoming);
-      
+
       if (upcoming) {
         const timeUntil = upcoming.startDate - Date.now();
         setTimeUntilUpcoming(Math.max(0, timeUntil));
@@ -80,68 +86,72 @@ export const useTournament = () => {
     };
   }, [activeTournament]);
 
-  const loadTournaments = useCallback(() => {
-    const allTournaments = getTournaments();
-    setTournaments(allTournaments);
-  }, []);
+  const handleCreateTournament = useCallback(
+    (e) => {
+      e.preventDefault();
+      setCreateError('');
 
-  const handleCreateTournament = useCallback((e) => {
-    e.preventDefault();
-    setCreateError('');
+      const { name, startDate, startTime, endDate, endTime } = createTournamentForm;
 
-    const { name, startDate, startTime, endDate, endTime } = createTournamentForm;
-    
-    if (!name.trim()) {
-      setCreateError('Tournament name is required');
-      return;
-    }
+      if (!name.trim()) {
+        setCreateError('Tournament name is required');
+        return;
+      }
 
-    const startDateTime = new Date(`${startDate}T${startTime}`);
-    const endDateTime = new Date(`${endDate}T${endTime}`);
-    
-    const validationError = validateTournamentDates(startDateTime, endDateTime);
-    if (validationError) {
-      setCreateError(validationError);
-      return;
-    }
+      const startDateTime = new Date(`${startDate}T${startTime}`);
+      const endDateTime = new Date(`${endDate}T${endTime}`);
 
-    try {
-      createTournament(name, startDateTime, endDateTime);
-      setCreateTournamentForm({
-        name: '',
-        startDate: '',
-        startTime: '',
-        endDate: '',
-        endTime: ''
-      });
-      setShowCreateTournament(false);
-      loadTournaments();
-    } catch (error) {
-      setCreateError('Failed to create tournament: ' + error.message);
-    }
-  }, [createTournamentForm, loadTournaments]);
+      const validationError = validateTournamentDates(startDateTime, endDateTime);
+      if (validationError) {
+        setCreateError(validationError);
+        return;
+      }
 
-  const handleDeleteTournament = useCallback((tournamentId) => {
-    if (window.confirm('Are you sure you want to delete this tournament?')) {
-      deleteTournament(tournamentId);
-      loadTournaments();
-    }
-  }, [loadTournaments]);
+      try {
+        createTournament(name, startDateTime, endDateTime);
+        setCreateTournamentForm({
+          name: '',
+          startDate: '',
+          startTime: '',
+          endDate: '',
+          endTime: '',
+        });
+        setShowCreateTournament(false);
+        loadTournaments();
+      } catch (error) {
+        setCreateError('Failed to create tournament: ' + error.message);
+      }
+    },
+    [createTournamentForm, loadTournaments]
+  );
 
-  const submitTournamentScore = useCallback((username, score, gameTime, moves) => {
-    if (!activeTournament) return false;
-    
-    return addTournamentScore(activeTournament.id, username, score, gameTime, moves);
-  }, [activeTournament]);
+  const handleDeleteTournament = useCallback(
+    (tournamentId) => {
+      if (window.confirm('Are you sure you want to delete this tournament?')) {
+        deleteTournament(tournamentId);
+        loadTournaments();
+      }
+    },
+    [loadTournaments]
+  );
+
+  const submitTournamentScore = useCallback(
+    (username, score, gameTime, moves) => {
+      if (!activeTournament) return false;
+
+      return addTournamentScore(activeTournament.id, username, score, gameTime, moves);
+    },
+    [activeTournament]
+  );
 
   const getFormattedTimeLeft = useCallback(() => {
     return formatTournamentTime(tournamentTimeLeft);
   }, [tournamentTimeLeft]);
 
   const updateCreateForm = useCallback((field, value) => {
-    setCreateTournamentForm(prev => ({
+    setCreateTournamentForm((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   }, []);
 
@@ -160,6 +170,6 @@ export const useTournament = () => {
     submitTournamentScore,
     getFormattedTimeLeft,
     updateCreateForm,
-    loadTournaments
+    loadTournaments,
   };
-}; 
+};
