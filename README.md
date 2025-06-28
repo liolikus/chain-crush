@@ -31,17 +31,17 @@ This game integrates with the Linera protocol to:
 - [x] **User Authentication System**
   - [x] Login with username
   - [ ] Discord OAuth integration
-  - [ ] User preferences and settings
+  - [x] User preferences and settings
   - [x] Secure password hashing
   - [x] Session management with 24-hour timeout
   - [x] Persistent login state
 
 ### 🎨 UI/UX Improvements
 - [ ] **Smooth Animations**
-  - [ ] Falling animations
+  - [x] Falling animations
   - [ ] Match explosion effects
-  - [ ] Score popup animations
-  - [ ] Smooth transitions between game states
+  - [x] Score popup animations
+  - [x] Smooth transitions between game states
   - [ ] Particle effects for special matches
 
 ### 🏆 Leaderboard & Competition
@@ -100,7 +100,7 @@ This game integrates with the Linera protocol to:
 
 ### 🎵 Audio & Visual Enhancements
 - [x] **Sound Design**
-  - [ ] Match sound effects
+  - [x] Match sound effects
   - [x] Background music (Jay Someday - Strawberry.mp3)
   - [ ] Power-up activation sounds
   - [ ] Victory/defeat audio feedback
