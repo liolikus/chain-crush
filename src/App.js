@@ -101,7 +101,7 @@ const App = () => {
     handleGameOverCallback
   );
 
-  const { isMuted, isPlaying, toggleMute } = useAudio();
+  const { isMuted, isPlaying, hasInteracted, toggleMute } = useAudio();
 
   const handleGameOver = useCallback(async () => {
     setGameOver(true);
@@ -486,6 +486,7 @@ const App = () => {
       <MuteButton 
         isMuted={isMuted}
         isPlaying={isPlaying}
+        hasInteracted={hasInteracted}
         onToggleMute={toggleMute}
       />
     </div>

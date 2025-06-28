@@ -1,4 +1,3 @@
-
 # Chain Crush ⛓️⛓️⛓️
 
 A blockchain-powered Candy Crush-style game built with React and Linera Protocol.
@@ -29,26 +28,33 @@ This game integrates with the Linera protocol to:
 ## TO DO
 
 ### 🔐 Authentication & User Management
-- [ ] **User Authentication System**
-  - [ ] Login with username
+- [x] **User Authentication System**
+  - [x] Login with username
   - [ ] Discord OAuth integration
-  - [ ] User preferences and settings
+  - [] User preferences and settings
+  - [x] Secure password hashing
+  - [x] Session management with 24-hour timeout
+  - [x] Persistent login state
 
 ### 🎨 UI/UX Improvements
-- [ ] **Smooth Animations**
-  - [ ] Falling animations
-  - [ ] Match explosion effects
-  - [ ] Score popup animations
-  - [ ] Smooth transitions between game states
+- [] **Smooth Animations**
+  - [] Falling animations
+  - [] Match explosion effects
+  - [] Score popup animations
+  - [] Smooth transitions between game states
   - [ ] Particle effects for special matches
 
 ### 🏆 Leaderboard & Competition
-- [ ] **Advanced Leaderboard System**
-  - [ ] Separate smart contract for leaderboard management
-  - [ ] Multiple leaderboard categories (daily, weekly, all-time)
-  - [ ] Player ranking system with tiers
-  - [ ] Historical performance tracking
-  - [ ] Seasonal competitions with rewards
+- [] **Advanced Leaderboard System**
+  - [] Separate smart contract for leaderboard management
+  - [] Multiple leaderboard categories (daily, weekly, all-time)
+  - [] Player ranking system with tiers
+  - [x] Historical performance tracking
+  - [] Seasonal competitions with rewards
+  - [x] Tournament system with admin controls
+  - [x] Tournament timers and countdowns
+  - [x] Tournament leaderboards (top 25 results)
+  - [x] Tournament status management with grace periods
 
 ### ⛓️ Special Game Mechanics
 - [ ] **Special Chains & Power-ups**
@@ -86,18 +92,20 @@ This game integrates with the Linera protocol to:
     - [ ] Social achievements (invite friends, win tournaments)
 
 ### 🔧 Technical Improvements
-- [ ] **Performance & Scalability**
-  - [ ] Game state optimization
-  - [ ] Blockchain transaction batching
-  - [ ] Offline game state synchronization
+- [x] **Performance & Scalability**
+  - [x] Game state optimization
+  - [x] Blockchain transaction batching
+  - [x] Offline game state synchronization
   - [ ] Progressive Web App (PWA) features
 
 ### 🎵 Audio & Visual Enhancements
-- [ ] **Sound Design**
+- [x] **Sound Design**
   - [ ] Match sound effects
-  - [ ] Background music
+  - [x] Background music (Jay Someday - Strawberry.mp3)
   - [ ] Power-up activation sounds
   - [ ] Victory/defeat audio feedback
+  - [x] Music controls with mute button
+  - [x] Audio autoplay handling for browser compatibility
 
 ### 📊 Analytics & Insights
 - [ ] **Player Analytics**

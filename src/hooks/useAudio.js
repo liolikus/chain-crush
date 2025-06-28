@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 export const useAudio = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -14,18 +15,8 @@ export const useAudio = () => {
     // Load audio
     audioRef.current.load();
 
-    // Auto-play when component mounts (browsers may block this)
-    const playPromise = audioRef.current.play();
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          setIsPlaying(true);
-        })
-        .catch((error) => {
-          console.log('Auto-play was prevented:', error);
-          setIsPlaying(false);
-        });
-    }
+    // Don't attempt autoplay - wait for user interaction
+    setIsPlaying(false);
 
     // Cleanup on unmount
     return () => {
@@ -39,9 +30,22 @@ export const useAudio = () => {
   const toggleMute = () => {
     if (audioRef.current) {
       if (isMuted) {
+        // Unmute
         audioRef.current.volume = 0.3;
         setIsMuted(false);
+        
+        // If this is the first interaction, start playing
+        if (!hasInteracted) {
+          setHasInteracted(true);
+          audioRef.current.play().then(() => {
+            setIsPlaying(true);
+          }).catch((error) => {
+            console.log('Play failed:', error);
+            setIsPlaying(false);
+          });
+        }
       } else {
+        // Mute
         audioRef.current.volume = 0;
         setIsMuted(true);
       }
@@ -50,8 +54,13 @@ export const useAudio = () => {
 
   const play = () => {
     if (audioRef.current && !isPlaying) {
-      audioRef.current.play();
-      setIsPlaying(true);
+      setHasInteracted(true);
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((error) => {
+        console.log('Play failed:', error);
+        setIsPlaying(false);
+      });
     }
   };
 
@@ -65,6 +74,7 @@ export const useAudio = () => {
   return {
     isMuted,
     isPlaying,
+    hasInteracted,
     toggleMute,
     play,
     pause
