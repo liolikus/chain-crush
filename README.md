@@ -23,7 +23,7 @@ This game integrates with the Linera protocol to:
 - Match 3 or more chains in a row or column
 - Score points for each match (3 chains = 3 points, 4 chains = 4 points)
 - 60-second time limit
-- Scores are converted to tokens when connected
+- Scores are converted to test-tokens when connected
 
 ## TO DO
 
@@ -202,7 +202,7 @@ chain-crush/
 
 ---
 
-**🎮 Start playing Chain Crush and earn tokens while having fun! 🎉**
+**🎮 Start playing Chain Crush and earn test-tokens while having fun! 🎉**
 
 *Built with ❤️ using React and Linera Protocol*
 
