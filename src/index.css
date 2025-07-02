@@ -1054,6 +1054,7 @@ body {
   border-radius: 8px;
   color: white;
   text-align: center;
+  display: none !important;
 }
 
 /* Responsive Design */

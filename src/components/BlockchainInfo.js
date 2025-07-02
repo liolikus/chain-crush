@@ -5,7 +5,7 @@ const BlockchainInfo = ({ isConnected, connectionTimeout, chainId, identity, app
     <div className="blockchain-info">
       <p>
         {isConnected
-          ? 'Your scores are converted to tokens on the Linera Microchains!'
+          ? 'Your score will be minted on the Linera Microchains!'
           : connectionTimeout
           ? '💾 Connection timed out. Playing in offline mode.'
           : '💾 Playing in offline mode. Blockchain features unavailable.'}

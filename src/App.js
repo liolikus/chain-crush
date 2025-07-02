@@ -481,10 +481,10 @@ const App = () => {
             {isConnected && scoreDisplay > 0 && (
               <div className="token-conversion">
                 <p className="blockchain-success">
-                  ✅ {Math.floor(scoreDisplay / 10)} tokens minted to your account!
+                  ✅ {Math.floor(scoreDisplay / 10)} test-tokens minted to your account!
                 </p>
                 <p>
-                  <small>Conversion rate: 10 points = 1 token</small>
+                  <small>Conversion rate: 10 points = 1 test-token</small>
                 </p>
               </div>
             )}
