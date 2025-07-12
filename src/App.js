@@ -210,14 +210,26 @@ const App = () => {
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
+    // Optimize for mobile: reduce frequency and batch updates
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const interval = isMobile ? 200 : 100; // Slower on mobile
+
     const timer = setInterval(() => {
-      checkForColumnOfFour();
-      checkForRowOfFour();
-      checkForColumnOfThree();
-      checkForRowOfThree();
-      moveIntoSquareBelow();
-      setCurrentColorArrangement([...currentColorArrangement]);
-    }, 100);
+      // Batch all checks and only update state once
+      let hasChanges = false;
+      
+      if (checkForColumnOfFour()) hasChanges = true;
+      if (checkForRowOfFour()) hasChanges = true;
+      if (checkForColumnOfThree()) hasChanges = true;
+      if (checkForRowOfThree()) hasChanges = true;
+      if (moveIntoSquareBelow()) hasChanges = true;
+      
+      // Only update state if there were actual changes
+      if (hasChanges) {
+        setCurrentColorArrangement([...currentColorArrangement]);
+      }
+    }, interval);
+    
     return () => clearInterval(timer);
   }, [
     checkForColumnOfFour,

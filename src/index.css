@@ -87,11 +87,14 @@ body {
 
 /* Candy Piece Animations */
 .candy-piece {
-  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;
   cursor: grab;
   user-select: none;
   position: relative;
   will-change: transform, opacity;
+  /* Hardware acceleration for better mobile performance */
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .candy-piece.game-active {
@@ -1772,18 +1775,22 @@ body {
     user-select: none;
     /* Prevent zoom on double tap */
     touch-action: manipulation;
+    /* Optimize for mobile performance */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
   }
 
   .candy-piece:active {
-    /* Enhanced touch feedback */
-    transform: scale(1.1) rotate(5deg);
-    transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    /* Enhanced touch feedback - simplified for mobile performance */
+    transform: scale(1.05);
+    transition: transform 0.1s ease;
   }
 
   .candy-piece.dragging {
-    /* Better visual feedback for touch dragging */
-    transform: scale(1.15) rotate(8deg);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    /* Better visual feedback for touch dragging - simplified */
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
   .candy-piece.drop-target {

@@ -16,17 +16,22 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
   const [moves, setMoves] = useState(0);
   const [animationStates, setAnimationStates] = useState({});
   const [scorePopups, setScorePopups] = useState([]);
-
+  
   // Touch event state for mobile support
   const [touchStartElement, setTouchStartElement] = useState(null);
   const [touchStartPosition, setTouchStartPosition] = useState(null);
+  const [lastTouchMoveTime, setLastTouchMoveTime] = useState(0);
 
-  // Helper function to add animation class
+  // Helper function to add animation class with performance optimization
   const addAnimationClass = useCallback((index, className, duration = 300) => {
-    setAnimationStates((prev) => ({
-      ...prev,
-      [index]: className,
-    }));
+    setAnimationStates((prev) => {
+      // Only update if the animation is different
+      if (prev[index] === className) return prev;
+      return {
+        ...prev,
+        [index]: className,
+      };
+    });
 
     setTimeout(() => {
       setAnimationStates((prev) => {
@@ -172,6 +177,8 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
   }, [currentColorArrangement, addAnimationClass, addScorePopup]);
 
   const moveIntoSquareBelow = useCallback(() => {
+    let hasChanges = false;
+    
     for (let i = 0; i <= 55; i++) {
       const firstRow = [0, 1, 2, 3, 4, 5, 6, 7];
       const isFirstRow = firstRow.includes(i);
@@ -181,6 +188,7 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
         currentColorArrangement[i] = CANDY_COLORS[randomNumber];
         // Add spawn animation for new candies
         addAnimationClass(i, 'spawning');
+        hasChanges = true;
       }
 
       if (currentColorArrangement[i + BOARD_WIDTH] === BLANK_CANDY) {
@@ -188,8 +196,11 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
         currentColorArrangement[i] = BLANK_CANDY;
         // Add falling animation for moving candies
         addAnimationClass(i + BOARD_WIDTH, 'falling', 400);
+        hasChanges = true;
       }
     }
+    
+    return hasChanges;
   }, [currentColorArrangement, addAnimationClass]);
 
   const createBoard = useCallback(() => {
@@ -200,6 +211,13 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
     }
     setCurrentColorArrangement(randomColorArrangement);
     setAnimationStates({}); // Clear all animations
+    
+    // Clear touch state when board is recreated
+    setTouchStartElement(null);
+    setTouchStartPosition(null);
+    setSquareBeingDragged(null);
+    setSquareBeingReplaced(null);
+    setLastTouchMoveTime(0);
   }, []);
 
   const dragStart = useCallback(
@@ -295,6 +313,11 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       e.preventDefault();
       if (!touchStartElement || !touchStartPosition) return;
 
+      // Debounce touch move events for better performance
+      const now = Date.now();
+      if (now - lastTouchMoveTime < 16) return; // ~60fps
+      setLastTouchMoveTime(now);
+
       const touch = e.touches[0];
       const deltaX = touch.clientX - touchStartPosition.x;
       const deltaY = touch.clientY - touchStartPosition.y;
@@ -324,7 +347,7 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
         }
       }
 
-      // Validate target index
+      // Validate target index and avoid DOM queries if possible
       if (targetIndex !== null && targetIndex >= 0 && targetIndex < BOARD_WIDTH * BOARD_WIDTH) {
         // Check if it's a valid move (adjacent)
         const validMoves = [
@@ -335,19 +358,21 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
         ];
 
         if (validMoves.includes(targetIndex)) {
-          // Create a synthetic target element
-          const targetElement = document.querySelector(`[data-id="${targetIndex}"]`);
-          if (targetElement) {
-            setSquareBeingDragged(touchStartElement);
-            setSquareBeingReplaced(targetElement);
+          // Only query DOM if we haven't already set the target
+          if (!squareBeingReplaced || parseInt(squareBeingReplaced.getAttribute('data-id')) !== targetIndex) {
+            const targetElement = document.querySelector(`[data-id="${targetIndex}"]`);
+            if (targetElement) {
+              setSquareBeingDragged(touchStartElement);
+              setSquareBeingReplaced(targetElement);
 
-            // Add drop target animation
-            addAnimationClass(targetIndex, 'drop-target', 200);
+              // Add drop target animation
+              addAnimationClass(targetIndex, 'drop-target', 200);
+            }
           }
         }
       }
     },
-    [touchStartElement, touchStartPosition, addAnimationClass]
+    [touchStartElement, touchStartPosition, squareBeingReplaced, addAnimationClass, lastTouchMoveTime]
   );
 
   const touchEnd = useCallback(

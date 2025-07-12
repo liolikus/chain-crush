@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-const GameBoard = ({
+const GameBoard = memo(({
   currentColorArrangement,
   gameOver,
   gameStarted,
@@ -42,6 +42,6 @@ const GameBoard = ({
       ))}
     </div>
   );
-};
+});
 
 export default GameBoard;
