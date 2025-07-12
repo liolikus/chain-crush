@@ -1,7 +1,8 @@
 
 {
   "short_name": "Chain Crush",
-  "name": "Chain Crush - on Linera",
+  "name": "Chain Crush - Blockchain Match-3 Game on Linera",
+  "description": "A blockchain-powered Candy Crush-style game built with React and Linera Protocol",
   "icons": [
     {
       "src": "favicon.ico",
@@ -11,7 +12,10 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "portrait",
+  "theme_color": "#4caf50",
+  "background_color": "#1a1a1a",
+  "categories": ["games", "entertainment"],
+  "lang": "en"
 }
 

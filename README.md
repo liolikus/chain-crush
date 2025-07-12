@@ -9,6 +9,7 @@ A blockchain-powered Candy Crush-style game built with React and Linera Protocol
 - **🏆 Real-time Leaderboard**: Compete with other players
 - **👤 User Authentication**: Simple login system with persistent sessions
 - **📱 Responsive Design**: Works on desktop and mobile devices
+- **📱 Mobile Touch Support**: Full touch/swipe controls for mobile gameplay
 - **💾 Offline Mode**: Play even when blockchain is unavailable
 - **🔧 Admin Panel**: Administrative controls for game management
 
@@ -24,6 +25,26 @@ This game integrates with the Linera protocol to:
 - Score points for each match (3 chains = 3 points, 4 chains = 4 points)
 - 60-second time limit
 - Scores are converted to test-tokens when connected
+
+## Mobile Support
+
+The game now includes full mobile touch support:
+
+- **Touch Controls**: Tap and swipe to move pieces
+- **Swipe Gestures**: Swipe in any direction to move adjacent pieces
+- **Touch Feedback**: Visual feedback for touch interactions
+- **Mobile Optimized**: Prevents scrolling and zooming during gameplay
+- **Responsive Design**: Adapts to different screen sizes
+
+### How to Play on Mobile
+
+1. **Start the Game**: Tap the "Start Game" button
+2. **Move Pieces**: Tap and swipe on a candy piece in the direction you want to move it
+3. **Valid Moves**: Only adjacent pieces can be swapped
+4. **Match Detection**: The game automatically detects and removes matches
+5. **Score Tracking**: Your score is displayed and tracked in real-time
+
+The mobile version maintains all the same features as the desktop version, including blockchain integration and leaderboard functionality.
 
 ## TO DO
 

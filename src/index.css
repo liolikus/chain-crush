@@ -1756,3 +1756,100 @@ body {
     font-size: 18px;
   }
 }
+
+/* Mobile Touch Enhancements */
+@media (max-width: 768px) {
+  .candy-piece {
+    /* Improve touch targets on mobile */
+    min-width: 60px;
+    min-height: 60px;
+    /* Prevent text selection and zoom on touch */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* Prevent zoom on double tap */
+    touch-action: manipulation;
+  }
+
+  .candy-piece:active {
+    /* Enhanced touch feedback */
+    transform: scale(1.1) rotate(5deg);
+    transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .candy-piece.dragging {
+    /* Better visual feedback for touch dragging */
+    transform: scale(1.15) rotate(8deg);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  }
+
+  .candy-piece.drop-target {
+    /* Enhanced drop target for mobile */
+    border: 3px solid #4caf50;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+  }
+
+  /* Prevent scrolling when touching game board */
+  .game {
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Improve game container for mobile */
+  .game-container {
+    touch-action: none;
+    overflow: hidden;
+  }
+
+  /* Enhanced form inputs for mobile */
+  .form-group input {
+    font-size: 16px; /* Prevent zoom on iOS */
+    padding: 12px 16px;
+    min-height: 44px; /* Better touch target */
+  }
+
+  .form-group input[type="date"],
+  .form-group input[type="time"] {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Better button touch targets */
+  .admin-btn,
+  .login-btn,
+  .start-btn,
+  .restart-btn,
+  .reset-btn,
+  .logout-btn {
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+
+  /* Improve modal touch targets */
+  .close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 18px;
+  }
+
+  /* Better scrollable areas */
+  .tournaments-grid.scrollable,
+  .results-list {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Prevent body scroll on mobile when game is active */
+@media (max-width: 768px) {
+  body.game-active {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+}

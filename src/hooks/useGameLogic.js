@@ -17,6 +17,10 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
   const [animationStates, setAnimationStates] = useState({});
   const [scorePopups, setScorePopups] = useState([]);
 
+  // Touch event state for mobile support
+  const [touchStartElement, setTouchStartElement] = useState(null);
+  const [touchStartPosition, setTouchStartPosition] = useState(null);
+
   // Helper function to add animation class
   const addAnimationClass = useCallback((index, className, duration = 300) => {
     setAnimationStates((prev) => ({
@@ -270,6 +274,139 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
     createBoard();
   }, [createBoard]);
 
+  // Touch event handlers for mobile support
+  const touchStart = useCallback(
+    (e) => {
+      e.preventDefault();
+      const element = e.target;
+      const touch = e.touches[0];
+      setTouchStartElement(element);
+      setTouchStartPosition({ x: touch.clientX, y: touch.clientY });
+
+      // Add touch start animation
+      const index = parseInt(element.getAttribute('data-id'));
+      addAnimationClass(index, 'dragging', 150);
+    },
+    [addAnimationClass]
+  );
+
+  const touchMove = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (!touchStartElement || !touchStartPosition) return;
+
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartPosition.x;
+      const deltaY = touch.clientY - touchStartPosition.y;
+      const threshold = 30; // Minimum distance to trigger a move
+
+      // Find the target element based on swipe direction
+      const currentIndex = parseInt(touchStartElement.getAttribute('data-id'));
+      let targetIndex = null;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Horizontal swipe
+        if (deltaX > threshold) {
+          // Swipe right
+          targetIndex = currentIndex + 1;
+        } else if (deltaX < -threshold) {
+          // Swipe left
+          targetIndex = currentIndex - 1;
+        }
+      } else {
+        // Vertical swipe
+        if (deltaY > threshold) {
+          // Swipe down
+          targetIndex = currentIndex + BOARD_WIDTH;
+        } else if (deltaY < -threshold) {
+          // Swipe up
+          targetIndex = currentIndex - BOARD_WIDTH;
+        }
+      }
+
+      // Validate target index
+      if (targetIndex !== null && targetIndex >= 0 && targetIndex < BOARD_WIDTH * BOARD_WIDTH) {
+        // Check if it's a valid move (adjacent)
+        const validMoves = [
+          currentIndex - 1,
+          currentIndex - BOARD_WIDTH,
+          currentIndex + 1,
+          currentIndex + BOARD_WIDTH,
+        ];
+
+        if (validMoves.includes(targetIndex)) {
+          // Create a synthetic target element
+          const targetElement = document.querySelector(`[data-id="${targetIndex}"]`);
+          if (targetElement) {
+            setSquareBeingDragged(touchStartElement);
+            setSquareBeingReplaced(targetElement);
+
+            // Add drop target animation
+            addAnimationClass(targetIndex, 'drop-target', 200);
+          }
+        }
+      }
+    },
+    [touchStartElement, touchStartPosition, addAnimationClass]
+  );
+
+  const touchEnd = useCallback(
+    (e) => {
+      e.preventDefault();
+
+      if (squareBeingDragged && squareBeingReplaced) {
+        // Use the existing dragEnd logic
+        const squareBeingDraggedId = parseInt(squareBeingDragged.getAttribute('data-id'));
+        const squareBeingReplacedId = parseInt(squareBeingReplaced.getAttribute('data-id'));
+
+        currentColorArrangement[squareBeingReplacedId] = squareBeingDragged.getAttribute('src');
+        currentColorArrangement[squareBeingDraggedId] = squareBeingReplaced.getAttribute('src');
+
+        const validMoves = [
+          squareBeingDraggedId - 1,
+          squareBeingDraggedId - BOARD_WIDTH,
+          squareBeingDraggedId + 1,
+          squareBeingDraggedId + BOARD_WIDTH,
+        ];
+
+        const validMove = validMoves.includes(squareBeingReplacedId);
+        const isAColumnOfFour = checkForColumnOfFour();
+        const isARowOfFour = checkForRowOfFour();
+        const isAColumnOfThree = checkForColumnOfThree();
+        const isARowOfThree = checkForRowOfThree();
+
+        if (
+          squareBeingReplacedId &&
+          validMove &&
+          (isARowOfThree || isARowOfFour || isAColumnOfFour || isAColumnOfThree)
+        ) {
+          setSquareBeingDragged(null);
+          setSquareBeingReplaced(null);
+          setMoves((prev) => prev + 1);
+        } else {
+          currentColorArrangement[squareBeingReplacedId] = squareBeingReplaced.getAttribute('src');
+          currentColorArrangement[squareBeingDraggedId] = squareBeingDragged.getAttribute('src');
+          setCurrentColorArrangement([...currentColorArrangement]);
+        }
+      }
+
+      // Reset touch state
+      setTouchStartElement(null);
+      setTouchStartPosition(null);
+      setSquareBeingDragged(null);
+      setSquareBeingReplaced(null);
+    },
+    [
+      squareBeingDragged,
+      squareBeingReplaced,
+      currentColorArrangement,
+      checkForColumnOfFour,
+      checkForRowOfFour,
+      checkForColumnOfThree,
+      checkForRowOfThree,
+    ]
+  );
+
   return {
     currentColorArrangement,
     setCurrentColorArrangement,
@@ -280,6 +417,9 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
     dragStart,
     dragDrop,
     dragEnd,
+    touchStart,
+    touchMove,
+    touchEnd,
     createBoard,
     resetGame,
     checkForColumnOfFour,

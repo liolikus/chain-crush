@@ -8,6 +8,9 @@ const GameBoard = ({
   onDragStart,
   onDragDrop,
   onDragEnd,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
 }) => {
   return (
     <div className={`game ${gameOver ? 'game-disabled' : ''}`}>
@@ -24,12 +27,16 @@ const GameBoard = ({
           onDragLeave={(e) => e.preventDefault()}
           onDrop={onDragDrop}
           onDragEnd={onDragEnd}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
           className={`candy-piece ${gameOver ? 'game-over' : ''} ${
             gameStarted ? 'game-active' : ''
           } ${animationStates[index] || ''}`}
           style={{
             opacity: gameOver ? 0.5 : 1,
             pointerEvents: !gameStarted || gameOver ? 'none' : 'auto',
+            touchAction: 'none', // Prevent default touch behaviors
           }}
         />
       ))}

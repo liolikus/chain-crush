@@ -71,6 +71,9 @@ const App = () => {
     dragStart,
     dragDrop,
     dragEnd,
+    touchStart,
+    touchMove,
+    touchEnd,
     createBoard,
     resetGame: resetGameLogic,
     checkForColumnOfFour,
@@ -108,7 +111,7 @@ const App = () => {
     handleDeleteTournament,
     submitTournamentScore,
     getFormattedTimeLeft,
-    updateCreateForm
+    updateCreateForm,
   } = useTournament();
 
   const handleGameOver = useCallback(async () => {
@@ -190,6 +193,19 @@ const App = () => {
   useEffect(() => {
     createBoard();
   }, [createBoard]);
+
+  // Add/remove body class for mobile scroll prevention
+  useEffect(() => {
+    if (gameStarted && !gameOver) {
+      document.body.classList.add('game-active');
+    } else {
+      document.body.classList.remove('game-active');
+    }
+
+    return () => {
+      document.body.classList.remove('game-active');
+    };
+  }, [gameStarted, gameOver]);
 
   useEffect(() => {
     if (!gameStarted || gameOver) return;
@@ -298,6 +314,31 @@ const App = () => {
     dragEnd();
   }, [gameOver, gameStarted, dragEnd]);
 
+  // Touch event handlers for mobile support
+  const handleTouchStart = useCallback(
+    (e) => {
+      if (gameOver || !gameStarted) return;
+      touchStart(e);
+    },
+    [gameOver, gameStarted, touchStart]
+  );
+
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (gameOver || !gameStarted) return;
+      touchMove(e);
+    },
+    [gameOver, gameStarted, touchMove]
+  );
+
+  const handleTouchEnd = useCallback(
+    (e) => {
+      if (gameOver || !gameStarted) return;
+      touchEnd(e);
+    },
+    [gameOver, gameStarted, touchEnd]
+  );
+
   return (
     <div className="app">
       <LoadingScreen
@@ -398,6 +439,9 @@ const App = () => {
             onDragStart={handleDragStart}
             onDragDrop={handleDragDrop}
             onDragEnd={handleDragEnd}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           />
 
           {/* Score Popups */}
