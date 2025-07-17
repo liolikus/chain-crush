@@ -210,9 +210,19 @@ const App = () => {
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
-    // Optimize for mobile: reduce frequency and batch updates
+    // Enhanced mobile detection and performance optimization
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const interval = isMobile ? 200 : 100; // Slower on mobile
+    const isLowEndDevice = navigator.hardwareConcurrency <= 4 || navigator.deviceMemory <= 4;
+    
+    // Adjust interval based on device capabilities
+    let interval;
+    if (isMobile && isLowEndDevice) {
+      interval = 300; // Slower for low-end mobile devices
+    } else if (isMobile) {
+      interval = 200; // Standard mobile devices
+    } else {
+      interval = 100; // Desktop devices
+    }
 
     const timer = setInterval(() => {
       // Batch all checks and only update state once

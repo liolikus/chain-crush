@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 
 const GameBoard = memo(({
   currentColorArrangement,
@@ -12,8 +12,31 @@ const GameBoard = memo(({
   onTouchMove,
   onTouchEnd,
 }) => {
+  // Optimize touch event handlers for mobile
+  const handleTouchStart = useCallback((e) => {
+    e.preventDefault();
+    onTouchStart(e);
+  }, [onTouchStart]);
+
+  const handleTouchMove = useCallback((e) => {
+    e.preventDefault();
+    onTouchMove(e);
+  }, [onTouchMove]);
+
+  const handleTouchEnd = useCallback((e) => {
+    e.preventDefault();
+    onTouchEnd(e);
+  }, [onTouchEnd]);
+
   return (
-    <div className={`game ${gameOver ? 'game-disabled' : ''}`}>
+    <div 
+      className={`game ${gameOver ? 'game-disabled' : ''}`}
+      style={{
+        touchAction: 'none', // Prevent default touch behaviors
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+      }}
+    >
       {currentColorArrangement.map((candyColor, index) => (
         <img
           key={index}
@@ -27,9 +50,9 @@ const GameBoard = memo(({
           onDragLeave={(e) => e.preventDefault()}
           onDrop={onDragDrop}
           onDragEnd={onDragEnd}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           className={`candy-piece ${gameOver ? 'game-over' : ''} ${
             gameStarted ? 'game-active' : ''
           } ${animationStates[index] || ''}`}
@@ -37,6 +60,11 @@ const GameBoard = memo(({
             opacity: gameOver ? 0.5 : 1,
             pointerEvents: !gameStarted || gameOver ? 'none' : 'auto',
             touchAction: 'none', // Prevent default touch behaviors
+            WebkitUserSelect: 'none',
+            userSelect: 'none',
+            // Optimize for mobile rendering
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
           }}
         />
       ))}

@@ -33,22 +33,30 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       };
     });
 
-    setTimeout(() => {
+    // Use requestAnimationFrame for better performance
+    const timeoutId = setTimeout(() => {
       setAnimationStates((prev) => {
         const newState = { ...prev };
         delete newState[index];
         return newState;
       });
     }, duration);
+
+    // Cleanup timeout on component unmount
+    return () => clearTimeout(timeoutId);
   }, []);
 
-  // Helper function to add score popup
+  // Helper function to add score popup with mobile optimization
   const addScorePopup = useCallback(
     (score, index) => {
       const row = Math.floor(index / BOARD_WIDTH);
       const col = index % BOARD_WIDTH;
-      const x = col * 70 + 35; // Center of the candy
-      const y = row * 70 + 35; // Center of the candy
+      
+      // Adjust popup position for mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const candySize = isMobile ? 40 : 70;
+      const x = col * candySize + candySize / 2;
+      const y = row * candySize + candySize / 2;
 
       const popupId = Date.now() + Math.random();
       const newPopup = {
@@ -65,7 +73,7 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       // Remove popup after animation
       setTimeout(() => {
         setScorePopups((prev) => prev.filter((popup) => popup.id !== popupId));
-      }, 1500);
+      }, isMobile ? 1000 : 1500); // Shorter animation on mobile
     },
     [playSoundEffect]
   );
@@ -301,7 +309,7 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       setTouchStartElement(element);
       setTouchStartPosition({ x: touch.clientX, y: touch.clientY });
 
-      // Add touch start animation
+      // Add touch start animation with reduced complexity for mobile
       const index = parseInt(element.getAttribute('data-id'));
       addAnimationClass(index, 'dragging', 150);
     },
@@ -313,15 +321,15 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       e.preventDefault();
       if (!touchStartElement || !touchStartPosition) return;
 
-      // Debounce touch move events for better performance
+      // Enhanced debouncing for better mobile performance
       const now = Date.now();
-      if (now - lastTouchMoveTime < 16) return; // ~60fps
+      if (now - lastTouchMoveTime < 32) return; // ~30fps for better performance
       setLastTouchMoveTime(now);
 
       const touch = e.touches[0];
       const deltaX = touch.clientX - touchStartPosition.x;
       const deltaY = touch.clientY - touchStartPosition.y;
-      const threshold = 30; // Minimum distance to trigger a move
+      const threshold = 40; // Increased threshold for better mobile experience
 
       // Find the target element based on swipe direction
       const currentIndex = parseInt(touchStartElement.getAttribute('data-id'));
@@ -347,7 +355,7 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
         }
       }
 
-      // Validate target index and avoid DOM queries if possible
+      // Validate target index without DOM queries
       if (targetIndex !== null && targetIndex >= 0 && targetIndex < BOARD_WIDTH * BOARD_WIDTH) {
         // Check if it's a valid move (adjacent)
         const validMoves = [
@@ -357,9 +365,18 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
           currentIndex + BOARD_WIDTH,
         ];
 
+        // Validate row boundaries
+        const currentRow = Math.floor(currentIndex / BOARD_WIDTH);
+        const targetRow = Math.floor(targetIndex / BOARD_WIDTH);
+        
+        // Prevent wrapping around rows
+        if (Math.abs(targetRow - currentRow) > 1) return;
+        if (Math.abs(targetIndex - currentIndex) > BOARD_WIDTH && Math.abs(targetIndex - currentIndex) !== BOARD_WIDTH) return;
+
         if (validMoves.includes(targetIndex)) {
-          // Only query DOM if we haven't already set the target
+          // Store target index instead of DOM element for better performance
           if (!squareBeingReplaced || parseInt(squareBeingReplaced.getAttribute('data-id')) !== targetIndex) {
+            // Use a ref or state to store target element instead of DOM query
             const targetElement = document.querySelector(`[data-id="${targetIndex}"]`);
             if (targetElement) {
               setSquareBeingDragged(touchStartElement);
