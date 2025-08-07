@@ -21,6 +21,86 @@ import TournamentManager from './components/TournamentManager';
 import MuteButton from './components/MuteButton';
 import ScorePopup from './components/ScorePopup';
 
+// Mobile-optimized Game Over Modal Component
+const GameOverModal = React.memo(({ 
+  gameOver, 
+  scoreDisplay, 
+  moves, 
+  timeLeft, 
+  activeTournament, 
+  isConnected, 
+  connectionTimeout, 
+  onResetGame 
+}) => {
+  if (!gameOver) return null;
+
+  return (
+    <div className="game-over-overlay">
+      <div className="game-over-popup">
+        <h2>🎉 Game Over!</h2>
+        <p>
+          Final Score: <strong>{scoreDisplay}</strong>
+        </p>
+        <p>
+          Total Moves: <strong>{moves}</strong>
+        </p>
+        <p>
+          Game Time: <strong>{60 - timeLeft}s</strong>
+        </p>
+        {activeTournament && (
+          <div className="tournament-notice">
+            <p className="tournament-success">
+              🏆 Score submitted to {activeTournament.name} tournament!
+            </p>
+          </div>
+        )}
+        {isConnected && scoreDisplay > 0 && (
+          <div className="token-conversion">
+            <p className="blockchain-success">
+              ✅ {Math.floor(scoreDisplay / 10)} test-tokens minted to your account!
+            </p>
+            <p>
+              <small>Conversion rate: 10 points = 1 test-token</small>
+            </p>
+          </div>
+        )}
+        {(!isConnected || connectionTimeout) && (
+          <p className="offline-notice">💾 Score saved locally (offline mode)</p>
+        )}
+        <button onClick={onResetGame} className="restart-btn">
+          🔄 Play Again
+        </button>
+      </div>
+    </div>
+  );
+});
+
+GameOverModal.displayName = 'GameOverModal';
+
+// Mobile-optimized Blockchain Status Component
+const BlockchainStatus = React.memo(({ isConnected, isLoading, connectionTimeout, status }) => (
+  <div className="blockchain-status">
+    <div className="status-indicator">
+      <span
+        className={`status-dot ${isConnected && !isLoading ? 'connected' : 'disconnected'}`}
+      ></span>
+      <span>
+        Linera Microchain:{' '}
+        {isConnected && !isLoading
+          ? '🟢 Connected'
+          : connectionTimeout
+          ? '🟡 Offline Mode'
+          : '🔴 Connecting...'}
+      </span>
+      {status !== 'Ready' && status !== 'Error' && !connectionTimeout && (
+        <span className="status-text"> - {status}</span>
+      )}
+    </div>
+  </div>
+));
+
+BlockchainStatus.displayName = 'BlockchainStatus';
+
 const App = () => {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -114,8 +194,7 @@ const App = () => {
     updateCreateForm,
   } = useTournament();
 
-
-
+  // Memoized game over handler for better performance
   const handleGameOver = useCallback(async () => {
     setGameOver(true);
     const gameTime = 60 - timeLeft;
@@ -153,95 +232,93 @@ const App = () => {
     setHandleGameOverCallback(() => handleGameOver);
   }, [handleGameOver]);
 
-  const displayLeaderboard = useMemo(() => {
-    return getDisplayLeaderboard(leaderboard, currentUser, activeTournament);
-  }, [leaderboard, currentUser, activeTournament]);
+  // Memoized event handlers for better performance
+  const handleDragStart = useCallback((e) => dragStart(e), [dragStart]);
+  const handleDragDrop = useCallback((e) => dragDrop(e), [dragDrop]);
+  const handleDragEnd = useCallback((e) => dragEnd(e), [dragEnd]);
+  const handleTouchStart = useCallback((e) => touchStart(e), [touchStart]);
+  const handleTouchMove = useCallback((e) => touchMove(e), [touchMove]);
+  const handleTouchEnd = useCallback((e) => touchEnd(e), [touchEnd]);
 
-  // Connection timeout handling
-  useEffect(() => {
-    if (isConnected && !isLoading) {
-      setConnectionTimeout(false);
-      setTimeoutCountdown(60);
+  // Memoized game control handlers
+  const startGame = useCallback(async () => {
+    if (!isLoggedIn) {
+      setShowLogin(true);
+      return;
     }
-  }, [isConnected, isLoading]);
 
+    setGameStarted(true);
+    setGameOver(false);
+    resetGameLogic();
+    resetTimer();
+
+    if (isConnected) {
+      try {
+        await startBlockchainGame();
+      } catch (error) {
+        console.error('Failed to start blockchain game:', error);
+      }
+    }
+  }, [isLoggedIn, isConnected, setShowLogin, resetGameLogic, resetTimer, startBlockchainGame]);
+
+  const resetGame = useCallback(() => {
+    setGameStarted(false);
+    setGameOver(false);
+    resetGameLogic();
+    resetTimer();
+  }, [resetGameLogic, resetTimer]);
+
+  // Memoized leaderboard data
+  const displayLeaderboard = useMemo(() => 
+    getDisplayLeaderboard(leaderboard, currentUser), 
+    [leaderboard, currentUser]
+  );
+
+  const resetLeaderboard = useCallback(async () => {
+    if (isAdmin) {
+      await resetLeaderboardData();
+      window.location.reload();
+    }
+  }, [isAdmin]);
+
+  // Connection timeout effect
   useEffect(() => {
-    let timeoutTimer;
-    let countdownTimer;
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        setConnectionTimeout(true);
+      }, 10000);
 
-    if (isLoading && !isConnected && !connectionTimeout) {
-      countdownTimer = setInterval(() => {
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
+  // Countdown effect for connection timeout
+  useEffect(() => {
+    if (isLoading && !connectionTimeout) {
+      const interval = setInterval(() => {
         setTimeoutCountdown((prev) => {
           if (prev <= 1) {
             setConnectionTimeout(true);
-            return 0;
+            return 60;
           }
           return prev - 1;
         });
       }, 1000);
 
-      timeoutTimer = setTimeout(() => {
-        setConnectionTimeout(true);
-      }, 60000);
+      return () => clearInterval(interval);
     }
+  }, [isLoading, connectionTimeout]);
 
-    return () => {
-      clearTimeout(timeoutTimer);
-      clearInterval(countdownTimer);
-    };
-  }, [isLoading, isConnected, connectionTimeout]);
-
-  // Game mechanics
+  // Game logic effects
   useEffect(() => {
-    createBoard();
-  }, [createBoard]);
-
-  // Add/remove body class for mobile scroll prevention
-  useEffect(() => {
-    if (gameStarted && !gameOver) {
-      document.body.classList.add('game-active');
-    } else {
-      document.body.classList.remove('game-active');
-    }
-
-    return () => {
-      document.body.classList.remove('game-active');
-    };
-  }, [gameStarted, gameOver]);
-
-  useEffect(() => {
-    if (!gameStarted || gameOver) return;
-
-    // Enhanced mobile detection and performance optimization
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isLowEndDevice = navigator.hardwareConcurrency <= 4 || navigator.deviceMemory <= 4;
-    
-    // Adjust interval based on device capabilities
-    let interval;
-    if (isMobile && isLowEndDevice) {
-      interval = 300; // Slower for low-end mobile devices
-    } else if (isMobile) {
-      interval = 200; // Standard mobile devices
-    } else {
-      interval = 100; // Desktop devices
-    }
-
     const timer = setInterval(() => {
-      // Batch all checks and only update state once
-      let hasChanges = false;
-      
-      if (checkForColumnOfFour()) hasChanges = true;
-      if (checkForRowOfFour()) hasChanges = true;
-      if (checkForColumnOfThree()) hasChanges = true;
-      if (checkForRowOfThree()) hasChanges = true;
-      if (moveIntoSquareBelow()) hasChanges = true;
-      
-      // Only update state if there were actual changes
-      if (hasChanges) {
-        setCurrentColorArrangement([...currentColorArrangement]);
-      }
-    }, interval);
-    
+      checkForColumnOfFour();
+      checkForRowOfFour();
+      checkForColumnOfThree();
+      checkForRowOfThree();
+      moveIntoSquareBelow();
+    }, 100);
+
     return () => clearInterval(timer);
   }, [
     checkForColumnOfFour,
@@ -249,272 +326,160 @@ const App = () => {
     checkForColumnOfThree,
     checkForRowOfThree,
     moveIntoSquareBelow,
-    currentColorArrangement,
-    gameStarted,
-    gameOver,
-    setCurrentColorArrangement,
   ]);
 
-  // Game actions
-  const startGame = useCallback(async () => {
-    if (!isLoggedIn) {
-      setShowLogin(true);
-      return;
-    }
+  useEffect(() => {
+    createBoard();
+  }, [createBoard]);
 
-    try {
-      if (isConnected) {
-        await startBlockchainGame();
-      }
+  // Memoized render sections for better performance
+  const gameSection = useMemo(() => (
+    <div className="game-container">
+      <GameBoard
+        currentColorArrangement={currentColorArrangement}
+        gameOver={gameOver}
+        gameStarted={gameStarted}
+        animationStates={animationStates}
+        onDragStart={handleDragStart}
+        onDragDrop={handleDragDrop}
+        onDragEnd={handleDragEnd}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      />
 
-      setGameStarted(true);
-      setGameOver(false);
-      resetTimer();
-      resetGameLogic();
-    } catch (error) {
-      console.error('Failed to start game:', error);
-      setGameStarted(true);
-      setGameOver(false);
-      resetTimer();
-      resetGameLogic();
-    }
-  }, [isLoggedIn, isConnected, startBlockchainGame, resetTimer, resetGameLogic, setShowLogin]);
+      {/* Score Popups */}
+      {scorePopups.map((popup) => (
+        <ScorePopup
+          key={popup.id}
+          score={popup.score}
+          position={popup.position}
+          onComplete={() => {
+            // Popup will be automatically removed by the hook
+          }}
+        />
+      ))}
 
-  const resetGame = useCallback(async () => {
-    try {
-      if (isConnected && gameStarted) {
-        await endBlockchainGame();
-      }
-    } catch (error) {
-      console.error('Failed to end game:', error);
-    } finally {
-      setGameStarted(false);
-      setGameOver(false);
-      resetTimer();
-      resetGameLogic();
-    }
-  }, [isConnected, gameStarted, endBlockchainGame, resetTimer, resetGameLogic]);
+      <GameControls
+        gameStarted={gameStarted}
+        gameOver={gameOver}
+        isLoggedIn={isLoggedIn}
+        isConnected={isConnected}
+        isLoading={isLoading}
+        connectionTimeout={connectionTimeout}
+        scoreDisplay={scoreDisplay}
+        moves={moves}
+        timeLeft={timeLeft}
+        onStartGame={startGame}
+        onResetGame={resetGame}
+        formatTime={formatTime}
+        activeTournament={activeTournament}
+      />
 
-  const proceedWithLocalGame = useCallback(() => {
-    setConnectionTimeout(true);
-  }, []);
-
-  // Admin functions
-  const resetLeaderboard = useCallback(() => {
-    if (!isAdmin) return;
-
-    if (window.confirm('Are you sure you want to reset the leaderboard?')) {
-      const success = resetLeaderboardData(currentUser, setCurrentUser);
-      if (success) {
-        alert('Leaderboard has been reset!');
-      }
-    }
-  }, [isAdmin, currentUser, setCurrentUser]);
-
-  const toggleAdminPanel = useCallback(() => {
-    if (!isAdmin) return;
-    setShowAdminPanel((prev) => !prev);
-  }, [isAdmin]);
-
-  // Enhanced drag handlers that check game state
-  const handleDragStart = useCallback(
-    (e) => {
-      if (gameOver || !gameStarted) return;
-      dragStart(e);
-    },
-    [gameOver, gameStarted, dragStart]
-  );
-
-  const handleDragDrop = useCallback(
-    (e) => {
-      if (gameOver || !gameStarted) return;
-      dragDrop(e);
-    },
-    [gameOver, gameStarted, dragDrop]
-  );
-
-  const handleDragEnd = useCallback(() => {
-    if (gameOver || !gameStarted) return;
-    dragEnd();
-  }, [gameOver, gameStarted, dragEnd]);
-
-  // Touch event handlers for mobile support
-  const handleTouchStart = useCallback(
-    (e) => {
-      if (gameOver || !gameStarted) return;
-      touchStart(e);
-    },
-    [gameOver, gameStarted, touchStart]
-  );
-
-  const handleTouchMove = useCallback(
-    (e) => {
-      if (gameOver || !gameStarted) return;
-      touchMove(e);
-    },
-    [gameOver, gameStarted, touchMove]
-  );
-
-  const handleTouchEnd = useCallback(
-    (e) => {
-      if (gameOver || !gameStarted) return;
-      touchEnd(e);
-    },
-    [gameOver, gameStarted, touchEnd]
-  );
-
-  return (
-    <div className="app">
-      <LoadingScreen
+      <BlockchainStatus
+        isConnected={isConnected}
         isLoading={isLoading}
         connectionTimeout={connectionTimeout}
         status={status}
-        timeoutCountdown={timeoutCountdown}
-        onProceedLocal={proceedWithLocalGame}
       />
+    </div>
+  ), [
+    currentColorArrangement,
+    gameOver,
+    gameStarted,
+    animationStates,
+    scorePopups,
+    isLoggedIn,
+    isConnected,
+    isLoading,
+    connectionTimeout,
+    scoreDisplay,
+    moves,
+    timeLeft,
+    activeTournament,
+    status,
+    handleDragStart,
+    handleDragDrop,
+    handleDragEnd,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+    startGame,
+    resetGame,
+    formatTime,
+  ]);
 
-      {error && !isConnected && (
-        <div className="error-banner">
-          <p>⚠️ {error}</p>
-          <p>
-            <small>Game will continue in offline mode</small>
-          </p>
-        </div>
+  if (isLoading && !connectionTimeout) {
+    return (
+      <LoadingScreen
+        timeoutCountdown={timeoutCountdown}
+        onSkip={() => setConnectionTimeout(true)}
+      />
+    );
+  }
+
+  return (
+    <div className="app">
+      {/* Login Modal */}
+      {showLogin && (
+        <LoginModal
+          showLogin={showLogin}
+          onLogin={handleLogin}
+          onClose={() => setShowLogin(false)}
+          error={loginError}
+        />
       )}
 
-      <LoginModal
-        showLogin={showLogin}
-        loginError={loginError}
-        onLogin={handleLogin}
-        onClose={() => setShowLogin(false)}
-      />
+      {/* User Bar */}
+      {isLoggedIn && (
+        <UserBar
+          currentUser={currentUser}
+          isAdmin={isAdmin}
+          onLogout={handleLogout}
+          onToggleAdmin={() => setShowAdminPanel(!showAdminPanel)}
+        />
+      )}
 
-      <UserBar
-        isLoggedIn={isLoggedIn}
-        currentUser={currentUser}
-        isAdmin={isAdmin}
-        onLogout={handleLogout}
-        onToggleAdminPanel={toggleAdminPanel}
-        showAdminPanel={showAdminPanel}
-        upcomingTournament={upcomingTournament}
-        timeUntilUpcoming={timeUntilUpcoming}
-      />
+      {/* Tournament Manager */}
+      {isAdmin && showAdminPanel && (
+        <TournamentManager
+          tournaments={tournaments}
+          showCreateTournament={showCreateTournament}
+          createTournamentForm={createTournamentForm}
+          createError={createError}
+          onShowCreateTournament={setShowCreateTournament}
+          onCreateTournament={handleCreateTournament}
+          onDeleteTournament={handleDeleteTournament}
+          onUpdateForm={updateCreateForm}
+        />
+      )}
 
       {/* Tournament Timer */}
-      <TournamentTimer
-        activeTournament={activeTournament}
-        timeLeft={tournamentTimeLeft}
-        formattedTime={getFormattedTimeLeft()}
-      />
+      {activeTournament && (
+        <TournamentTimer
+          activeTournament={activeTournament}
+          tournamentTimeLeft={tournamentTimeLeft}
+          getFormattedTimeLeft={getFormattedTimeLeft}
+        />
+      )}
 
-      {/* Admin Controls */}
-      {isAdmin && showAdminPanel && (
-        <div className="admin-controls">
-          <div className="admin-header">
-            <h3>Admin Panel</h3>
-            <button onClick={toggleAdminPanel} className="close-btn">
-              ✕
-            </button>
-          </div>
-          <div className="admin-actions">
-            <button onClick={resetLeaderboard} className="admin-btn danger">
-              🗑️ Reset Leaderboard
-            </button>
-            <div className="admin-info">
-              <p>
-                <small>🔧 Admin Mode Active</small>
-              </p>
-              <p>
-                <small>Chain: {isConnected ? 'Connected' : 'Offline'}</small>
-              </p>
-            </div>
-          </div>
-
-          {/* Tournament Management */}
-          <TournamentManager
-            tournaments={tournaments}
-            showCreateTournament={showCreateTournament}
-            createTournamentForm={createTournamentForm}
-            createError={createError}
-            onShowCreate={() => setShowCreateTournament(true)}
-            onHideCreate={() => setShowCreateTournament(false)}
-            onCreateTournament={handleCreateTournament}
-            onDeleteTournament={handleDeleteTournament}
-            onUpdateForm={updateCreateForm}
-          />
+      {upcomingTournament && !activeTournament && (
+        <div className="upcoming-tournament">
+          <h3>🏆 Upcoming Tournament: {upcomingTournament.name}</h3>
+          <p>⏰ Starts in: {getFormattedTimeLeft(timeUntilUpcoming)}</p>
         </div>
       )}
 
       <div className="top-layout">
         <BlockchainInfo
           isConnected={isConnected}
-          connectionTimeout={connectionTimeout}
           chainId={chainId}
           identity={identity}
           applicationId={applicationId}
+          error={error}
         />
 
-        <div className="game-container">
-          <GameBoard
-            currentColorArrangement={currentColorArrangement}
-            gameOver={gameOver}
-            gameStarted={gameStarted}
-            animationStates={animationStates}
-            onDragStart={handleDragStart}
-            onDragDrop={handleDragDrop}
-            onDragEnd={handleDragEnd}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          />
-
-          {/* Score Popups */}
-          {scorePopups.map((popup) => (
-            <ScorePopup
-              key={popup.id}
-              score={popup.score}
-              position={popup.position}
-              onComplete={() => {
-                // Popup will be automatically removed by the hook
-              }}
-            />
-          ))}
-
-          <GameControls
-            gameStarted={gameStarted}
-            gameOver={gameOver}
-            isLoggedIn={isLoggedIn}
-            isConnected={isConnected}
-            isLoading={isLoading}
-            connectionTimeout={connectionTimeout}
-            scoreDisplay={scoreDisplay}
-            moves={moves}
-            timeLeft={timeLeft}
-            onStartGame={startGame}
-            onResetGame={resetGame}
-            formatTime={formatTime}
-            activeTournament={activeTournament}
-          />
-
-          <div className="blockchain-status">
-            <div className="status-indicator">
-              <span
-                className={`status-dot ${isConnected && !isLoading ? 'connected' : 'disconnected'}`}
-              ></span>
-              <span>
-                Linera Microchain:{' '}
-                {isConnected && !isLoading
-                  ? '🟢 Connected'
-                  : connectionTimeout
-                  ? '🟡 Offline Mode'
-                  : '🔴 Connecting...'}
-              </span>
-              {status !== 'Ready' && status !== 'Error' && !connectionTimeout && (
-                <span className="status-text"> - {status}</span>
-              )}
-            </div>
-          </div>
-        </div>
+        {gameSection}
 
         <Leaderboard
           displayLeaderboard={displayLeaderboard}
@@ -525,46 +490,17 @@ const App = () => {
         />
       </div>
 
-      {/* Game Over Popup */}
-      {gameOver && (
-        <div className="game-over-overlay">
-          <div className="game-over-popup">
-            <h2>🎉 Game Over!</h2>
-            <p>
-              Final Score: <strong>{scoreDisplay}</strong>
-            </p>
-            <p>
-              Total Moves: <strong>{moves}</strong>
-            </p>
-            <p>
-              Game Time: <strong>{60 - timeLeft}s</strong>
-            </p>
-            {activeTournament && (
-              <div className="tournament-notice">
-                <p className="tournament-success">
-                  🏆 Score submitted to {activeTournament.name} tournament!
-                </p>
-              </div>
-            )}
-            {isConnected && scoreDisplay > 0 && (
-              <div className="token-conversion">
-                <p className="blockchain-success">
-                  ✅ {Math.floor(scoreDisplay / 10)} test-tokens minted to your account!
-                </p>
-                <p>
-                  <small>Conversion rate: 10 points = 1 test-token</small>
-                </p>
-              </div>
-            )}
-            {(!isConnected || connectionTimeout) && (
-              <p className="offline-notice">💾 Score saved locally (offline mode)</p>
-            )}
-            <button onClick={resetGame} className="restart-btn">
-              🔄 Play Again
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Game Over Modal */}
+      <GameOverModal
+        gameOver={gameOver}
+        scoreDisplay={scoreDisplay}
+        moves={moves}
+        timeLeft={timeLeft}
+        activeTournament={activeTournament}
+        isConnected={isConnected}
+        connectionTimeout={connectionTimeout}
+        onResetGame={resetGame}
+      />
 
       {/* Linera Logo */}
       <div className="linera-logo">
@@ -581,4 +517,5 @@ const App = () => {
     </div>
   );
 };
+
 export default App;

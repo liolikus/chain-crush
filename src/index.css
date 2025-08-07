@@ -5,8 +5,25 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  /* Mobile optimization */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* Disable overscroll bounce on iOS */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
+/* Reduce animation on mobile for better performance */
+@media (max-width: 768px) {
+  body {
+    animation: none;
+    background: linear-gradient(-45deg, #fd0000, #292828);
+    background-size: 200% 200%;
+  }
+}
+
+/* Optimize gradient animation for better mobile performance */
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;
@@ -27,6 +44,11 @@ body {
   color: white;
   min-height: 100vh;
   position: relative;
+  /* Mobile optimization */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Linera Logo */
@@ -35,6 +57,8 @@ body {
   bottom: 20px;
   left: 20px;
   z-index: 100;
+  /* Mobile optimization */
+  pointer-events: none;
 }
 
 .linera-logo img {
@@ -42,6 +66,9 @@ body {
   width: auto;
   opacity: 0.8;
   transition: opacity 0.3s ease;
+  /* Optimize image rendering */
+  image-rendering: -webkit-optimize-contrast;
+  will-change: opacity;
 }
 
 .linera-logo img:hover {
@@ -57,6 +84,8 @@ body {
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
+  /* Mobile optimization */
+  contain: layout style;
 }
 
 .game-container {
@@ -64,45 +93,86 @@ body {
   flex-direction: column;
   align-items: center;
   position: relative;
+  /* Mobile optimization */
+  contain: layout style;
 }
 
-/* Game Board */
+/* Game Board - Mobile First Approach */
 .game {
-  width: 560px;
-  height: 560px;
+  width: 320px;
+  height: 320px;
   display: flex;
   flex-wrap: wrap;
-  border: 3px solid #444;
+  border: 2px solid #444;
   border-radius: 8px;
   background-color: transparent;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
+  /* Mobile performance optimizations */
+  contain: layout style paint;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Touch optimizations */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Desktop scaling */
+@media (min-width: 769px) {
+  .game {
+    width: 560px;
+    height: 560px;
+    border-width: 3px;
+  }
 }
 
 .game img {
-  width: 70px;
-  height: 70px;
-}
-
-/* Candy Piece Animations */
-.candy-piece {
-  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.2s ease;
-  cursor: grab;
-  user-select: none;
-  position: relative;
+  width: 40px;
+  height: 40px;
+  /* Mobile-first image optimization */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* Performance optimizations */
   will-change: transform, opacity;
-  /* Hardware acceleration for better mobile performance */
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
-.candy-piece.game-active {
-  animation: candyGlow 1.5s ease-in-out infinite alternate;
+/* Desktop image scaling */
+@media (min-width: 769px) {
+  .game img {
+    width: 70px;
+    height: 70px;
+    image-rendering: auto;
+  }
 }
 
-.candy-piece.game-over {
-  animation: fadeOut 0.3s ease-out forwards;
+/* Candy Piece Animations - Optimized for mobile */
+.candy-piece {
+  transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+              opacity 0.15s ease;
+  cursor: grab;
+  user-select: none;
+  position: relative;
+  /* Hardware acceleration for better mobile performance */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Touch optimizations */
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Reduce transition duration on mobile for snappier feel */
+@media (max-width: 768px) {
+  .candy-piece {
+    transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                opacity 0.1s ease;
+  }
 }
 
 /* Drag and Drop Animations */

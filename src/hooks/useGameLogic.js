@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   GAME_CONFIG,
   CANDY_COLORS,
@@ -17,12 +17,15 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
   const [animationStates, setAnimationStates] = useState({});
   const [scorePopups, setScorePopups] = useState([]);
   
-  // Touch event state for mobile support
-  const [touchStartElement, setTouchStartElement] = useState(null);
+  // Enhanced touch event state for mobile optimization
+  const [touchStartIndex, setTouchStartIndex] = useState(null);
   const [touchStartPosition, setTouchStartPosition] = useState(null);
-  const [lastTouchMoveTime, setLastTouchMoveTime] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const lastTouchMoveTime = useRef(0);
+  const touchThreshold = useRef(10); // Minimum distance for touch move
+  const animationTimeouts = useRef(new Map()); // Track animation timeouts for cleanup
 
-  // Helper function to add animation class with performance optimization
+  // Helper function to add animation class with performance optimization and cleanup
   const addAnimationClass = useCallback((index, className, duration = 300) => {
     setAnimationStates((prev) => {
       // Only update if the animation is different
@@ -33,6 +36,11 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       };
     });
 
+    // Clear existing timeout for this index
+    if (animationTimeouts.current.has(index)) {
+      clearTimeout(animationTimeouts.current.get(index));
+    }
+
     // Use requestAnimationFrame for better performance
     const timeoutId = setTimeout(() => {
       setAnimationStates((prev) => {
@@ -40,10 +48,10 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
         delete newState[index];
         return newState;
       });
+      animationTimeouts.current.delete(index);
     }, duration);
 
-    // Cleanup timeout on component unmount
-    return () => clearTimeout(timeoutId);
+    animationTimeouts.current.set(index, timeoutId);
   }, []);
 
   // Helper function to add score popup with mobile optimization
@@ -52,8 +60,8 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       const row = Math.floor(index / BOARD_WIDTH);
       const col = index % BOARD_WIDTH;
       
-      // Adjust popup position for mobile
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // Detect mobile device more efficiently
+      const isMobile = window.innerWidth <= 768;
       const candySize = isMobile ? 40 : 70;
       const x = col * candySize + candySize / 2;
       const y = row * candySize + candySize / 2;
@@ -70,10 +78,10 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       // Play sound effect for score popup
       playSoundEffect('scorePopup');
 
-      // Remove popup after animation
+      // Remove popup after animation with mobile-optimized timing
       setTimeout(() => {
         setScorePopups((prev) => prev.filter((popup) => popup.id !== popupId));
-      }, isMobile ? 1000 : 1500); // Shorter animation on mobile
+      }, isMobile ? 800 : 1500);
     },
     [playSoundEffect]
   );
@@ -221,11 +229,11 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
     setAnimationStates({}); // Clear all animations
     
     // Clear touch state when board is recreated
-    setTouchStartElement(null);
+    setTouchStartIndex(null);
     setTouchStartPosition(null);
+    setIsDragging(false);
     setSquareBeingDragged(null);
     setSquareBeingReplaced(null);
-    setLastTouchMoveTime(0);
   }, []);
 
   const dragStart = useCallback(
@@ -300,152 +308,158 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
     createBoard();
   }, [createBoard]);
 
-  // Touch event handlers for mobile support
-  const touchStart = useCallback(
-    (e) => {
-      e.preventDefault();
-      const element = e.target;
-      const touch = e.touches[0];
-      setTouchStartElement(element);
-      setTouchStartPosition({ x: touch.clientX, y: touch.clientY });
-
-      // Add touch start animation with reduced complexity for mobile
-      const index = parseInt(element.getAttribute('data-id'));
+  // Optimized touch start handler - no DOM queries
+  const touchStart = useCallback((e) => {
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const target = e.currentTarget;
+    const index = parseInt(target.getAttribute('data-id'));
+    
+    if (index >= 0 && index < BOARD_WIDTH * BOARD_WIDTH) {
+      setTouchStartIndex(index);
+      setTouchStartPosition({
+        x: touch.clientX,
+        y: touch.clientY,
+      });
+      setIsDragging(false);
+      
+      // Add visual feedback
       addAnimationClass(index, 'dragging', 150);
-    },
-    [addAnimationClass]
-  );
+    }
+  }, [addAnimationClass]);
 
+  // Throttled touch move handler with gesture recognition
   const touchMove = useCallback(
     (e) => {
       e.preventDefault();
-      if (!touchStartElement || !touchStartPosition) return;
-
-      // Enhanced debouncing for better mobile performance
+      
+      // Throttle touch move events for better performance
       const now = Date.now();
-      if (now - lastTouchMoveTime < 32) return; // ~30fps for better performance
-      setLastTouchMoveTime(now);
+      if (now - lastTouchMoveTime.current < 16) return; // ~60fps
+      lastTouchMoveTime.current = now;
+
+      if (touchStartIndex === null || !touchStartPosition) return;
 
       const touch = e.touches[0];
       const deltaX = touch.clientX - touchStartPosition.x;
       const deltaY = touch.clientY - touchStartPosition.y;
-      const threshold = 40; // Increased threshold for better mobile experience
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-      // Find the target element based on swipe direction
-      const currentIndex = parseInt(touchStartElement.getAttribute('data-id'));
+      // Only start dragging if moved beyond threshold
+      if (distance < touchThreshold.current) return;
+      
+      if (!isDragging) {
+        setIsDragging(true);
+      }
+
+      // Calculate target index based on swipe direction
       let targetIndex = null;
+      const currentRow = Math.floor(touchStartIndex / BOARD_WIDTH);
+      const currentCol = touchStartIndex % BOARD_WIDTH;
 
+      // Determine swipe direction with improved sensitivity
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
         // Horizontal swipe
-        if (deltaX > threshold) {
-          // Swipe right
-          targetIndex = currentIndex + 1;
-        } else if (deltaX < -threshold) {
-          // Swipe left
-          targetIndex = currentIndex - 1;
+        if (deltaX > touchThreshold.current && currentCol < BOARD_WIDTH - 1) {
+          targetIndex = touchStartIndex + 1; // Swipe right
+        } else if (deltaX < -touchThreshold.current && currentCol > 0) {
+          targetIndex = touchStartIndex - 1; // Swipe left
         }
       } else {
         // Vertical swipe
-        if (deltaY > threshold) {
-          // Swipe down
-          targetIndex = currentIndex + BOARD_WIDTH;
-        } else if (deltaY < -threshold) {
-          // Swipe up
-          targetIndex = currentIndex - BOARD_WIDTH;
+        if (deltaY > touchThreshold.current && currentRow < BOARD_WIDTH - 1) {
+          targetIndex = touchStartIndex + BOARD_WIDTH; // Swipe down
+        } else if (deltaY < -touchThreshold.current && currentRow > 0) {
+          targetIndex = touchStartIndex - BOARD_WIDTH; // Swipe up
         }
       }
 
-      // Validate target index without DOM queries
-      if (targetIndex !== null && targetIndex >= 0 && targetIndex < BOARD_WIDTH * BOARD_WIDTH) {
-        // Check if it's a valid move (adjacent)
-        const validMoves = [
-          currentIndex - 1,
-          currentIndex - BOARD_WIDTH,
-          currentIndex + 1,
-          currentIndex + BOARD_WIDTH,
-        ];
-
-        // Validate row boundaries
-        const currentRow = Math.floor(currentIndex / BOARD_WIDTH);
-        const targetRow = Math.floor(targetIndex / BOARD_WIDTH);
+      // Validate and set target
+      if (targetIndex !== null && 
+          targetIndex >= 0 && 
+          targetIndex < BOARD_WIDTH * BOARD_WIDTH) {
         
-        // Prevent wrapping around rows
-        if (Math.abs(targetRow - currentRow) > 1) return;
-        if (Math.abs(targetIndex - currentIndex) > BOARD_WIDTH && Math.abs(targetIndex - currentIndex) !== BOARD_WIDTH) return;
-
-        if (validMoves.includes(targetIndex)) {
-          // Store target index instead of DOM element for better performance
-          if (!squareBeingReplaced || parseInt(squareBeingReplaced.getAttribute('data-id')) !== targetIndex) {
-            // Use a ref or state to store target element instead of DOM query
-            const targetElement = document.querySelector(`[data-id="${targetIndex}"]`);
-            if (targetElement) {
-              setSquareBeingDragged(touchStartElement);
-              setSquareBeingReplaced(targetElement);
-
-              // Add drop target animation
-              addAnimationClass(targetIndex, 'drop-target', 200);
-            }
-          }
+        // Prevent setting the same target repeatedly
+        if (squareBeingReplaced !== targetIndex) {
+          setSquareBeingDragged(touchStartIndex);
+          setSquareBeingReplaced(targetIndex);
+          
+          // Add visual feedback for target
+          addAnimationClass(targetIndex, 'drop-target', 200);
         }
       }
     },
-    [touchStartElement, touchStartPosition, squareBeingReplaced, addAnimationClass, lastTouchMoveTime]
+    [touchStartIndex, touchStartPosition, isDragging, squareBeingReplaced, addAnimationClass]
   );
 
+  // Optimized touch end handler
   const touchEnd = useCallback(
     (e) => {
       e.preventDefault();
 
-      if (squareBeingDragged && squareBeingReplaced) {
-        // Use the existing dragEnd logic
-        const squareBeingDraggedId = parseInt(squareBeingDragged.getAttribute('data-id'));
-        const squareBeingReplacedId = parseInt(squareBeingReplaced.getAttribute('data-id'));
-
-        currentColorArrangement[squareBeingReplacedId] = squareBeingDragged.getAttribute('src');
-        currentColorArrangement[squareBeingDraggedId] = squareBeingReplaced.getAttribute('src');
-
+      if (touchStartIndex !== null && squareBeingReplaced !== null && isDragging) {
+        // Perform the swap using indices instead of DOM elements
+        const draggedIndex = touchStartIndex;
+        const replacedIndex = squareBeingReplaced;
+        
+        // Create a copy of the arrangement for the swap
+        const newArrangement = [...currentColorArrangement];
+        const draggedColor = newArrangement[draggedIndex];
+        const replacedColor = newArrangement[replacedIndex];
+        
+        // Perform the swap
+        newArrangement[replacedIndex] = draggedColor;
+        newArrangement[draggedIndex] = replacedColor;
+        
+        // Temporarily update the arrangement to check for matches
+        const tempArrangement = currentColorArrangement;
+        setCurrentColorArrangement(newArrangement);
+        
+        // Check for valid moves with the new arrangement
         const validMoves = [
-          squareBeingDraggedId - 1,
-          squareBeingDraggedId - BOARD_WIDTH,
-          squareBeingDraggedId + 1,
-          squareBeingDraggedId + BOARD_WIDTH,
+          draggedIndex - 1,
+          draggedIndex - BOARD_WIDTH,
+          draggedIndex + 1,
+          draggedIndex + BOARD_WIDTH,
         ];
 
-        const validMove = validMoves.includes(squareBeingReplacedId);
+        const validMove = validMoves.includes(replacedIndex);
+        
+        // Check for matches (these functions will use the updated arrangement)
         const isAColumnOfFour = checkForColumnOfFour();
         const isARowOfFour = checkForRowOfFour();
         const isAColumnOfThree = checkForColumnOfThree();
         const isARowOfThree = checkForRowOfThree();
 
-        if (
-          squareBeingReplacedId &&
-          validMove &&
-          (isARowOfThree || isARowOfFour || isAColumnOfFour || isAColumnOfThree)
-        ) {
-          setSquareBeingDragged(null);
-          setSquareBeingReplaced(null);
+        if (validMove && (isARowOfThree || isARowOfFour || isAColumnOfFour || isAColumnOfThree)) {
+          // Valid move with matches - keep the swap and increment moves
           setMoves((prev) => prev + 1);
+          playSoundEffect('match');
         } else {
-          currentColorArrangement[squareBeingReplacedId] = squareBeingReplaced.getAttribute('src');
-          currentColorArrangement[squareBeingDraggedId] = squareBeingDragged.getAttribute('src');
-          setCurrentColorArrangement([...currentColorArrangement]);
+          // Invalid move - revert the swap
+          setCurrentColorArrangement(tempArrangement);
+          playSoundEffect('invalidMove');
         }
       }
 
-      // Reset touch state
-      setTouchStartElement(null);
+      // Reset all touch state
+      setTouchStartIndex(null);
       setTouchStartPosition(null);
+      setIsDragging(false);
       setSquareBeingDragged(null);
       setSquareBeingReplaced(null);
     },
     [
-      squareBeingDragged,
+      touchStartIndex,
       squareBeingReplaced,
+      isDragging,
       currentColorArrangement,
       checkForColumnOfFour,
       checkForRowOfFour,
       checkForColumnOfThree,
       checkForRowOfThree,
+      playSoundEffect,
     ]
   );
 
