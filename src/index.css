@@ -97,18 +97,19 @@ body {
   contain: layout style;
 }
 
-/* Game Board - Mobile First Approach */
+/* Game Board - Fixed Size for Consistent Gameplay */
 .game {
-  width: 320px;
-  height: 320px;
+  width: 400px;
+  height: 400px;
   display: flex;
   flex-wrap: wrap;
-  border: 2px solid #444;
+  border: 3px solid #444;
   border-radius: 8px;
   background-color: transparent;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
+  margin: 0 auto;
   /* Mobile performance optimizations */
   contain: layout style paint;
   will-change: transform;
@@ -120,6 +121,38 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.game img {
+  width: 50px;
+  height: 50px;
+  /* Mobile-optimized image rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* Performance optimizations */
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Ensure good touch targets */
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Smaller screens - reduce game board size but keep it playable */
+@media (max-width: 480px) {
+  .game {
+    width: 320px;
+    height: 320px;
+    border-width: 2px;
+  }
+
+  .game img {
+    width: 40px;
+    height: 40px;
+    /* Maintain minimum touch target */
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
 /* Desktop scaling */
 @media (min-width: 769px) {
   .game {
@@ -127,22 +160,7 @@ body {
     height: 560px;
     border-width: 3px;
   }
-}
 
-.game img {
-  width: 40px;
-  height: 40px;
-  /* Mobile-first image optimization */
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  /* Performance optimizations */
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Desktop image scaling */
-@media (min-width: 769px) {
   .game img {
     width: 70px;
     height: 70px;

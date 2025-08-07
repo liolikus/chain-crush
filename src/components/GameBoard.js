@@ -12,6 +12,12 @@ const GameBoard = memo(({
   onTouchMove,
   onTouchEnd,
 }) => {
+  // Detect mobile device for disabling drag events
+  const isMobile = useMemo(() => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           window.innerWidth <= 768;
+  }, []);
+
   // Memoize board style for better performance
   const boardStyle = useMemo(() => ({
     touchAction: 'none', // Prevent default touch behaviors
@@ -58,8 +64,8 @@ const GameBoard = memo(({
     backfaceVisibility: 'hidden',
     willChange: animationClass ? 'transform, opacity' : 'auto',
     // Improve image rendering on mobile
-    imageRendering: window.innerWidth <= 768 ? 'crisp-edges' : 'auto',
-  }), []);
+    imageRendering: isMobile ? 'crisp-edges' : 'auto',
+  }), [isMobile]);
 
   // Memoize the candy pieces to prevent unnecessary re-renders
   const candyPieces = useMemo(() => {
@@ -73,13 +79,13 @@ const GameBoard = memo(({
           src={candyColor}
           alt={`candy-${index}`}
           data-id={index}
-          draggable={!gameOver && gameStarted}
-          onDragStart={onDragStart}
-          onDragOver={(e) => e.preventDefault()}
-          onDragEnter={(e) => e.preventDefault()}
-          onDragLeave={(e) => e.preventDefault()}
-          onDrop={onDragDrop}
-          onDragEnd={onDragEnd}
+          draggable={!isMobile && !gameOver && gameStarted} // Disable drag on mobile
+          onDragStart={!isMobile ? onDragStart : undefined}
+          onDragOver={!isMobile ? (e) => e.preventDefault() : undefined}
+          onDragEnter={!isMobile ? (e) => e.preventDefault() : undefined}
+          onDragLeave={!isMobile ? (e) => e.preventDefault() : undefined}
+          onDrop={!isMobile ? onDragDrop : undefined}
+          onDragEnd={!isMobile ? onDragEnd : undefined}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -97,6 +103,7 @@ const GameBoard = memo(({
     animationStates,
     gameOver,
     gameStarted,
+    isMobile,
     getCandyStyle,
     onDragStart,
     onDragDrop,

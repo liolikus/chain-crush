@@ -311,6 +311,7 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
   // Optimized touch start handler - no DOM queries
   const touchStart = useCallback((e) => {
     e.preventDefault();
+    e.stopPropagation();
     
     const touch = e.touches[0];
     const target = e.currentTarget;
@@ -324,15 +325,16 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       });
       setIsDragging(false);
       
-      // Add visual feedback
+      // Add visual feedback immediately
       addAnimationClass(index, 'dragging', 150);
     }
   }, [addAnimationClass]);
 
-  // Throttled touch move handler with gesture recognition
+  // Enhanced touch move handler with better gesture recognition for Android
   const touchMove = useCallback(
     (e) => {
       e.preventDefault();
+      e.stopPropagation();
       
       // Throttle touch move events for better performance
       const now = Date.now();
@@ -346,31 +348,32 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       const deltaY = touch.clientY - touchStartPosition.y;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-      // Only start dragging if moved beyond threshold
-      if (distance < touchThreshold.current) return;
+      // Reduced threshold for better mobile sensitivity
+      const threshold = 20;
+      if (distance < threshold) return;
       
       if (!isDragging) {
         setIsDragging(true);
       }
 
-      // Calculate target index based on swipe direction
+      // Calculate target index based on swipe direction with improved logic
       let targetIndex = null;
       const currentRow = Math.floor(touchStartIndex / BOARD_WIDTH);
       const currentCol = touchStartIndex % BOARD_WIDTH;
 
-      // Determine swipe direction with improved sensitivity
+      // Determine primary swipe direction (more sensitive)
       if (Math.abs(deltaX) > Math.abs(deltaY)) {
         // Horizontal swipe
-        if (deltaX > touchThreshold.current && currentCol < BOARD_WIDTH - 1) {
+        if (deltaX > threshold && currentCol < BOARD_WIDTH - 1) {
           targetIndex = touchStartIndex + 1; // Swipe right
-        } else if (deltaX < -touchThreshold.current && currentCol > 0) {
+        } else if (deltaX < -threshold && currentCol > 0) {
           targetIndex = touchStartIndex - 1; // Swipe left
         }
       } else {
         // Vertical swipe
-        if (deltaY > touchThreshold.current && currentRow < BOARD_WIDTH - 1) {
+        if (deltaY > threshold && currentRow < BOARD_WIDTH - 1) {
           targetIndex = touchStartIndex + BOARD_WIDTH; // Swipe down
-        } else if (deltaY < -touchThreshold.current && currentRow > 0) {
+        } else if (deltaY < -threshold && currentRow > 0) {
           targetIndex = touchStartIndex - BOARD_WIDTH; // Swipe up
         }
       }
@@ -380,7 +383,7 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
           targetIndex >= 0 && 
           targetIndex < BOARD_WIDTH * BOARD_WIDTH) {
         
-        // Prevent setting the same target repeatedly
+        // Only update if target changed
         if (squareBeingReplaced !== targetIndex) {
           setSquareBeingDragged(touchStartIndex);
           setSquareBeingReplaced(targetIndex);
@@ -393,30 +396,18 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
     [touchStartIndex, touchStartPosition, isDragging, squareBeingReplaced, addAnimationClass]
   );
 
-  // Optimized touch end handler
+  // Enhanced touch end handler with better swap logic
   const touchEnd = useCallback(
     (e) => {
       e.preventDefault();
+      e.stopPropagation();
 
       if (touchStartIndex !== null && squareBeingReplaced !== null && isDragging) {
         // Perform the swap using indices instead of DOM elements
         const draggedIndex = touchStartIndex;
         const replacedIndex = squareBeingReplaced;
         
-        // Create a copy of the arrangement for the swap
-        const newArrangement = [...currentColorArrangement];
-        const draggedColor = newArrangement[draggedIndex];
-        const replacedColor = newArrangement[replacedIndex];
-        
-        // Perform the swap
-        newArrangement[replacedIndex] = draggedColor;
-        newArrangement[draggedIndex] = replacedColor;
-        
-        // Temporarily update the arrangement to check for matches
-        const tempArrangement = currentColorArrangement;
-        setCurrentColorArrangement(newArrangement);
-        
-        // Check for valid moves with the new arrangement
+        // Validate the move is adjacent
         const validMoves = [
           draggedIndex - 1,
           draggedIndex - BOARD_WIDTH,
@@ -424,21 +415,44 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
           draggedIndex + BOARD_WIDTH,
         ];
 
-        const validMove = validMoves.includes(replacedIndex);
-        
-        // Check for matches (these functions will use the updated arrangement)
-        const isAColumnOfFour = checkForColumnOfFour();
-        const isARowOfFour = checkForRowOfFour();
-        const isAColumnOfThree = checkForColumnOfThree();
-        const isARowOfThree = checkForRowOfThree();
+        // Check row boundaries to prevent wrapping
+        const draggedRow = Math.floor(draggedIndex / BOARD_WIDTH);
+        const replacedRow = Math.floor(replacedIndex / BOARD_WIDTH);
+        const isValidRowMove = Math.abs(draggedRow - replacedRow) <= 1;
 
-        if (validMove && (isARowOfThree || isARowOfFour || isAColumnOfFour || isAColumnOfThree)) {
-          // Valid move with matches - keep the swap and increment moves
-          setMoves((prev) => prev + 1);
-          playSoundEffect('match');
+        if (validMoves.includes(replacedIndex) && isValidRowMove) {
+          // Create a copy of the arrangement for the swap
+          const newArrangement = [...currentColorArrangement];
+          const draggedColor = newArrangement[draggedIndex];
+          const replacedColor = newArrangement[replacedIndex];
+          
+          // Perform the swap
+          newArrangement[replacedIndex] = draggedColor;
+          newArrangement[draggedIndex] = replacedColor;
+          
+          // Temporarily update the arrangement to check for matches
+          const tempArrangement = [...currentColorArrangement];
+          setCurrentColorArrangement(newArrangement);
+          
+          // Small delay to allow state update before checking matches
+          setTimeout(() => {
+            const isAColumnOfFour = checkForColumnOfFour();
+            const isARowOfFour = checkForRowOfFour();
+            const isAColumnOfThree = checkForColumnOfThree();
+            const isARowOfThree = checkForRowOfThree();
+
+            if (isARowOfThree || isARowOfFour || isAColumnOfFour || isAColumnOfThree) {
+              // Valid move with matches - keep the swap and increment moves
+              setMoves((prev) => prev + 1);
+              playSoundEffect('match');
+            } else {
+              // Invalid move - revert the swap
+              setCurrentColorArrangement(tempArrangement);
+              playSoundEffect('invalidMove');
+            }
+          }, 50);
         } else {
-          // Invalid move - revert the swap
-          setCurrentColorArrangement(tempArrangement);
+          // Invalid move - provide feedback
           playSoundEffect('invalidMove');
         }
       }
@@ -460,6 +474,8 @@ export const useGameLogic = (playSoundEffect = () => {}) => {
       checkForColumnOfThree,
       checkForRowOfThree,
       playSoundEffect,
+      setCurrentColorArrangement,
+      setMoves,
     ]
   );
 
