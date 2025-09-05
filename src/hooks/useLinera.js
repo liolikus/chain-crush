@@ -8,6 +8,7 @@ export const useLinera = () => {
   const [leaderboard, setLeaderboard] = useState(lineraService.getMockLeaderboard()); // Initialize with mock data
   const [error, setError] = useState(null);
   const [status, setStatus] = useState('Loading');
+  const [blockchainUpdates, setBlockchainUpdates] = useState(0);
 
   const updateStatus = useCallback(async (newStatus) => {
     console.log('🔄 Status update:', newStatus);
@@ -83,6 +84,20 @@ export const useLinera = () => {
         // Set default data immediately
         setUserStats(lineraService.getDefaultStats());
         setLeaderboard(lineraService.getMockLeaderboard());
+
+        // Set up blockchain notification subscription
+        const unsubscribe = lineraService.onBlockchainUpdate((notification) => {
+          console.log('🔔 Received blockchain notification in hook:', notification);
+          setBlockchainUpdates(prev => prev + 1);
+          
+          // Refresh data when blockchain updates
+          setTimeout(() => {
+            loadUserDataInBackground();
+          }, 500);
+        });
+
+        // Store unsubscribe function for cleanup
+        window.lineraUnsubscribe = unsubscribe;
 
         // Load user data in the background
         setTimeout(() => {
@@ -190,6 +205,14 @@ export const useLinera = () => {
 
   useEffect(() => {
     initializeLinera();
+    
+    // Cleanup notification subscription on unmount
+    return () => {
+      if (window.lineraUnsubscribe) {
+        window.lineraUnsubscribe();
+        window.lineraUnsubscribe = null;
+      }
+    };
   }, [initializeLinera]);
 
   return {
@@ -199,6 +222,7 @@ export const useLinera = () => {
     leaderboard,
     error,
     status,
+    blockchainUpdates,
     startGame,
     submitScore,
     endGame,

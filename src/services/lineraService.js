@@ -12,6 +12,8 @@ class LineraService {
     this.faucet = null;
     this.accountOwner = null;
     this.identity = null;
+    this.notificationCallbacks = new Set();
+    this.lastUpdateTime = Date.now();
   }
 
   getOrCreatePlayerId() {
@@ -50,6 +52,10 @@ class LineraService {
       // Create client
       await updateStatus('Creating Client');
       this.client = await new linera.Client(this.wallet);
+
+      // Set up notification handling for real-time updates
+      await updateStatus('Setting up Notifications');
+      this.setupNotificationHandling();
 
       // Claim chain
       await updateStatus('Claiming Chain');
@@ -342,7 +348,8 @@ class LineraService {
     return { success: true };
   }
 
-  getUserStats() {
+  // Legacy sync method - keeping for compatibility  
+  getUserStatsSync() {
     return {
       playerId: this.playerId,
       bestScore: 0,
@@ -399,9 +406,8 @@ class LineraService {
     ];
   }
 
-  getLeaderboard() {
-    // Always return the mock leaderboard for now
-    // In a real implementation, this would fetch from blockchain
+  // Legacy sync method - keeping for compatibility
+  getLeaderboardSync() {
     return this.getMockLeaderboard();
   }
 
@@ -423,6 +429,158 @@ class LineraService {
   }
   getIdentity() {
     return this.identity;
+  }
+
+  // Notification handling for real-time blockchain updates
+  setupNotificationHandling() {
+    if (!this.client) {
+      console.warn('⚠️ Cannot setup notifications - client not available');
+      return;
+    }
+
+    try {
+      // Set up notification callback for new blocks like in the reference
+      this.client.onNotification(notification => {
+        console.log('🔔 Received blockchain notification:', notification);
+        
+        if (notification.reason && notification.reason.NewBlock) {
+          console.log('📦 New block detected, triggering updates...');
+          this.lastUpdateTime = Date.now();
+          
+          // Notify all registered callbacks about the blockchain update
+          this.notificationCallbacks.forEach(callback => {
+            try {
+              callback(notification);
+            } catch (error) {
+              console.warn('⚠️ Notification callback failed:', error);
+            }
+          });
+        }
+      });
+      
+      console.log('✅ Notification handling setup successfully');
+    } catch (error) {
+      console.warn('⚠️ Failed to setup notification handling:', error);
+    }
+  }
+
+  // Subscribe to blockchain notifications
+  onBlockchainUpdate(callback) {
+    if (typeof callback !== 'function') {
+      throw new Error('Callback must be a function');
+    }
+    
+    this.notificationCallbacks.add(callback);
+    
+    // Return unsubscribe function
+    return () => {
+      this.notificationCallbacks.delete(callback);
+    };
+  }
+
+  // Enhanced leaderboard fetch with real-time updates
+  async getLeaderboard() {
+    try {
+      if (!this.application || !this.isInitialized) {
+        console.log('📊 Application not ready, returning mock leaderboard');
+        return this.getMockLeaderboard();
+      }
+
+      // Try to fetch real leaderboard data using GraphQL
+      const query = this.gql(`
+        query {
+          entries {
+            owner
+            balance
+          }
+        }
+      `);
+
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Leaderboard query timeout')), 5000)
+      );
+
+      const result = await Promise.race([
+        this.application.query(query),
+        timeout
+      ]);
+
+      const parsedResult = JSON.parse(result);
+      
+      if (parsedResult.data && parsedResult.data.entries) {
+        // Convert blockchain data to leaderboard format
+        const leaderboard = parsedResult.data.entries
+          .map((entry, index) => ({
+            playerId: entry.owner.substring(0, 10) + '...',
+            score: entry.balance * 10, // Convert tokens back to score
+            tokens: entry.balance,
+            moves: Math.floor(Math.random() * 60) + 30, // Mock data
+            gameTime: Math.floor(Math.random() * 120) + 60, // Mock data
+            timestamp: Date.now() - (index * 1000000), // Mock timestamps
+          }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10);
+
+        console.log('✅ Real leaderboard fetched from blockchain:', leaderboard);
+        return leaderboard;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch real leaderboard, using mock:', error);
+    }
+
+    // Fallback to mock data
+    return this.getMockLeaderboard();
+  }
+
+  // Enhanced user stats with blockchain data
+  async getUserStats() {
+    try {
+      if (!this.application || !this.isInitialized || !this.identity) {
+        return this.getDefaultStats();
+      }
+
+      // Query user's token balance
+      const query = this.gql(`
+        query($owner: Owner!) {
+          entry(key: $owner) {
+            balance
+          }
+        }
+      `, {
+        owner: this.identity
+      });
+
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('User stats query timeout')), 5000)
+      );
+
+      const result = await Promise.race([
+        this.application.query(query),
+        timeout
+      ]);
+
+      const parsedResult = JSON.parse(result);
+      
+      if (parsedResult.data && parsedResult.data.entry) {
+        const tokenBalance = parsedResult.data.entry.balance || 0;
+        
+        return {
+          playerId: this.playerId,
+          bestScore: tokenBalance * 10, // Convert tokens to score equivalent
+          totalScore: tokenBalance * 10,
+          gamesPlayed: Math.max(1, Math.floor(tokenBalance / 50)), // Estimate
+          averageScore: tokenBalance * 10,
+          totalMoves: tokenBalance * 2, // Estimate
+          totalTime: tokenBalance * 3, // Estimate
+          lastPlayed: this.lastUpdateTime,
+          tokenBalance: tokenBalance,
+        };
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch real user stats, using defaults:', error);
+    }
+
+    return this.getDefaultStats();
   }
 }
 

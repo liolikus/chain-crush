@@ -26,6 +26,8 @@ yarn-error.log*
 .idea/
 .cursor/
 .windsurf/
+.claude
+CLAUDE.md
 
 # Contract build artifacts
 contract/target/
